@@ -1,6 +1,7 @@
 package com.nonprofit.aananth.prms;
 
 import android.content.res.Configuration;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,6 +11,9 @@ import android.widget.TextView;
 import java.lang.String;
 import java.util.Arrays;
 import java.util.List;
+
+import static java.security.AccessController.getContext;
+
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -22,6 +26,7 @@ public class LoginActivity extends AppCompatActivity {
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
     private EditText user, password;
+    private PatientDB patientdb = new PatientDB(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +39,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Aananth added these lines
         currLayout = R.layout.login;
+        Log.d("Init", "Patient list created with name: "+patientdb.toString());
     }
 
     /**
@@ -61,6 +67,11 @@ public class LoginActivity extends AppCompatActivity {
         else {
             Log.d("Authentication ", "Failure! Username: " + user.getText().toString());
         }
+
+        // remove these lines
+        Log.d("Authentication", "Successful login");
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
     }
 
     @Override
@@ -68,5 +79,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         Log.d("Configuration Changed", "Layout set to current layout");
         setContentView(currLayout);
+    }
+
+    // Added by Aananth: Add button handler
+    public void AddNewPatient(View view) {
     }
 }
