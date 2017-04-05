@@ -83,5 +83,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // Added by Aananth: Add button handler
     public void AddNewPatient(View view) {
+        currLayout = R.layout.add_edit;
+        setContentView(currLayout);
     }
 }

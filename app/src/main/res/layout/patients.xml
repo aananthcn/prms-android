@@ -38,12 +38,12 @@
     <Button
         android:id="@+id/search_btn"
         android:layout_width="80dp"
-        android:layout_height="46dp"
+        android:layout_height="48dp"
+        android:layout_marginLeft="0dp"
         android:text="Search"
-        app:layout_constraintLeft_toRightOf="@+id/search_txt"
         app:layout_constraintBottom_toBottomOf="@+id/search_txt"
-        app:layout_constraintTop_toTopOf="@+id/search_txt"
-        android:layout_marginLeft="0dp" />
+        app:layout_constraintLeft_toRightOf="@+id/search_txt"
+        app:layout_constraintTop_toTopOf="@+id/search_txt" />
 
     <Button
         android:id="@+id/add_btn"
