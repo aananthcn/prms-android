@@ -32,11 +32,11 @@ public class MainActivity extends AppCompatActivity {
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
     private EditText user, password, patname, patphone, patmail;
-    private ListView listPat;
     private PatientDB patientdb = new PatientDB(this);
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private RecyclerAdapter mAdapter;
+    List<Patient> patientList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,13 +90,10 @@ public class MainActivity extends AppCompatActivity {
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        List<Patient> patlist = new ArrayList<Patient>();
-        Patient p1 = new Patient("aananth", "999", "a@b.com");
-        Patient p2 = new Patient("manoja", "888", "m@v.com");
-        patlist.add(p1);
-        patlist.add(p2);
-        mAdapter = new RecyclerAdapter(patlist);
+        mAdapter = new RecyclerAdapter(patientList);
         mRecyclerView.setAdapter(mAdapter);
+
+        preparePatientData();
     }
 
     @Override
@@ -104,6 +101,23 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         Log.d("Main Activity", "Layout set to current layout");
         setContentView(currLayout);
+    }
+
+    // Added by Aananth for patient list
+    private void preparePatientData() {
+        Patient p = new Patient("Aananth C N", "999", "a@b.com");
+        patientList.add(p);
+
+        p = new Patient("Manoja V", "888", "m@v.com");
+        patientList.add(p);
+
+        p = new Patient("Hardhik A", "888", "m@v.com");
+        patientList.add(p);
+
+        p = new Patient("Saanika A Smriti", "888", "m@v.com");
+        patientList.add(p);
+
+        mAdapter.notifyDataSetChanged();
     }
 
     // Added by Aananth: Add button handler

@@ -1,29 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="2dp"
+    android:orientation="vertical">
+
     <TextView
         android:id="@+id/item_name"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="8dp"
+        android:layout_weight="0.01"
         android:adjustViewBounds="true"
-        android:layout_weight="3"/>
+        android:text="name"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
     <TextView
         android:id="@+id/item_phone"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_gravity="top|start"
-        android:layout_weight="1"
-        android:text="Some date"/>
+        android:text="phone" />
+
     <TextView
         android:id="@+id/item_email"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center|start"
-        android:layout_weight="1"
+        android:layout_marginBottom="6dp"
         android:ellipsize="end"
-        android:maxLines="5"/>
+        android:maxLines="5"
+        android:text="email" />
 </LinearLayout>
