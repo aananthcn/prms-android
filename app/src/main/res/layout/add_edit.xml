@@ -43,46 +43,26 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/add_edit_txt" />
 
-    <RadioButton
-        android:id="@+id/radioMale"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="101dp"
-        android:text="Male"
-        android:textSize="18sp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginStart="101dp"
-        app:layout_constraintTop_toTopOf="@+id/radioFemale"
-        android:layout_marginTop="1dp" />
-
-    <RadioButton
-        android:id="@+id/radioFemale"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="41dp"
-        android:layout_marginTop="36dp"
-        android:text="Female"
-        android:textSize="18sp"
-        app:layout_constraintLeft_toRightOf="@+id/radioMale"
-        app:layout_constraintTop_toBottomOf="@+id/fullName"
-        android:layout_marginStart="41dp" />
-
     <EditText
         android:id="@+id/phoneNo"
-        android:layout_width="372dp"
+        android:layout_width="0dp"
         android:layout_height="39dp"
-        android:layout_marginTop="26dp"
         android:ems="10"
         android:hint="Phone"
         android:inputType="phone"
         android:textAlignment="center"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/radioMale" />
+        tools:layout_constraintRight_creator="1"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        tools:layout_constraintLeft_creator="1"
+        android:layout_marginTop="37dp"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup" />
 
     <EditText
         android:id="@+id/emailID"
-        android:layout_width="376dp"
+        android:layout_width="0dp"
         android:layout_height="46dp"
         android:layout_marginTop="23dp"
         android:ems="10"
@@ -92,36 +72,67 @@
         android:textSize="18sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/phoneNo" />
+        app:layout_constraintTop_toBottomOf="@+id/phoneNo"
+        tools:layout_constraintRight_creator="1"
+        android:layout_marginStart="48dp"
+        android:layout_marginEnd="48dp"
+        tools:layout_constraintLeft_creator="1" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/pat_save"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Save"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="60dp"
+        android:onClick="SavePatientRecord"
         app:layout_constraintTop_toBottomOf="@+id/emailID"
-        android:layout_marginLeft="85dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginStart="85dp" />
+        app:layout_constraintRight_toLeftOf="@+id/pat_back" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/pat_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Back"
-        app:layout_constraintLeft_toRightOf="@+id/button"
-        android:layout_marginLeft="30dp"
-        android:layout_marginStart="30dp"
-        app:layout_constraintTop_toTopOf="@+id/button" />
+        app:layout_constraintLeft_toRightOf="@+id/pat_save"
+        app:layout_constraintTop_toTopOf="@+id/pat_save"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/pat_save"
+        app:layout_constraintVertical_bias="0.0" />
 
     <android.support.constraint.Guideline
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/guideline7"
         app:layout_constraintGuide_begin="20dp"
-        android:orientation="horizontal"
-        tools:layout_editor_absoluteY="20dp"
-        tools:layout_editor_absoluteX="0dp" />
+        android:orientation="vertical"
+        tools:layout_editor_absoluteY="0dp"
+        tools:layout_editor_absoluteX="20dp" />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="36dp"
+        app:layout_constraintTop_toBottomOf="@+id/fullName"
+        android:id="@+id/radioGroup"
+        android:orientation="vertical"
+        app:layout_constraintHorizontal_bias="0.498">
+
+        <RadioButton
+            android:id="@+id/radioMale"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="Male" />
+
+        <RadioButton
+            android:id="@+id/radioFemale"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="Female" />
+    </RadioGroup>
 
 </android.support.constraint.ConstraintLayout>
