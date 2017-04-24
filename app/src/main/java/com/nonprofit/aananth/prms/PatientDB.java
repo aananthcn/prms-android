@@ -57,10 +57,10 @@ public class PatientDB extends SQLiteOpenHelper{
         Cursor res;
 
         if (search == null) {
-            query = new String("SELECT * FROM " + TABLE_PATIENTS + " ORDER BY " + COLUMN_ID + " DESC");
+            query = "SELECT * FROM " + TABLE_PATIENTS + " ORDER BY " + COLUMN_ID + " DESC";
         } else {
-            query = new String("SELECT * FROM " + TABLE_PATIENTS +
-                            " WHERE name LIKE '"+search+"' OR phone LIKE '"+search+"'");
+            query = "SELECT * FROM " + TABLE_PATIENTS +
+                            " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'";
         }
         Log.d("PatientDB", query);
         res = db.rawQuery(query, null);
@@ -70,14 +70,15 @@ public class PatientDB extends SQLiteOpenHelper{
             pat = new Patient("Empty", "", "");
             patientList.add(pat);
 
+            res.close();
             return patientList;
         }
 
         Log.d("PatientDB", "Number of patients = "+res.getCount());
-        while(res.isAfterLast() == false){
-            name = new String(res.getString(res.getColumnIndex("name")));
-            phone = new String(res.getString(res.getColumnIndex("phone")));
-            email = new String(res.getString(res.getColumnIndex("email")));
+        while(!res.isAfterLast()){
+            name = res.getString(res.getColumnIndex("name"));
+            phone = res.getString(res.getColumnIndex("phone"));
+            email = res.getString(res.getColumnIndex("email"));
 
             Log.d("PatientDB", "Name = "+ name + ", Phone: "+phone+", Email = "+email);
             pat = new Patient(name, phone, email);
@@ -86,6 +87,7 @@ public class PatientDB extends SQLiteOpenHelper{
             res.moveToNext();
         }
 
+        res.close();
         return patientList;
     }
 }
