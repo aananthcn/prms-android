@@ -1,9 +1,13 @@
 package com.nonprofit.aananth.prms;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by aananth on 04/04/17.
@@ -38,16 +42,50 @@ public class PatientDB extends SQLiteOpenHelper{
         onCreate(db);
     }
 
-    public void InitDatabase(SQLiteDatabase db) {
-        //db.execSQL("CREATE DATABASE IF NOT EXISTS "+ DATABASE_NAME);
-        //db.execSQL("USE " + DATABASE_NAME);
-        //db.execSQL("CREATE TABLE IF NOT EXISTS " + PATIENT_TABLE + " ( pid INT NOT NULL AUTO_INCREMENT, name VARCHAR(100), phone VARCHAR(30), email VARCHAR(60), gender VARCHAR(20), PRIMARY KEY (pid) )");
-    }
-
     public void AddPatient(String name, String gender, String phone, String email) {
         SQLiteDatabase db = this.getWritableDatabase();
         Log.d("PatientDB", name + ", " + gender + ", " + phone + ", " + email);
         db.execSQL("INSERT INTO " + TABLE_PATIENTS + " (name, phone, email, gender) VALUES ('"+ name +
                 "', '" + phone +"', '" + email + "', '" + gender + "')");
+    }
+
+    public List<Patient> GetPatientList(String search) {
+        List<Patient> patientList = new ArrayList<>();
+        SQLiteDatabase db = this.getWritableDatabase();
+        String name, phone, email, query;
+        Patient pat;
+        Cursor res;
+
+        if (search == null) {
+            query = new String("SELECT * FROM " + TABLE_PATIENTS + " ORDER BY " + COLUMN_ID + " DESC");
+        } else {
+            query = new String("SELECT * FROM " + TABLE_PATIENTS +
+                            " WHERE name LIKE '"+search+"' OR phone LIKE '"+search+"'");
+        }
+        Log.d("PatientDB", query);
+        res = db.rawQuery(query, null);
+        res.moveToFirst();
+
+        if (res.getCount() <= 0) {
+            pat = new Patient("Empty", "", "");
+            patientList.add(pat);
+
+            return patientList;
+        }
+
+        Log.d("PatientDB", "Number of patients = "+res.getCount());
+        while(res.isAfterLast() == false){
+            name = new String(res.getString(res.getColumnIndex("name")));
+            phone = new String(res.getString(res.getColumnIndex("phone")));
+            email = new String(res.getString(res.getColumnIndex("email")));
+
+            Log.d("PatientDB", "Name = "+ name + ", Phone: "+phone+", Email = "+email);
+            pat = new Patient(name, phone, email);
+            patientList.add(pat);
+
+            res.moveToNext();
+        }
+
+        return patientList;
     }
 }

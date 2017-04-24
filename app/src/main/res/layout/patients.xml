@@ -21,6 +21,7 @@
         android:layout_width="88dp"
         android:layout_height="48dp"
         android:text="Search"
+        android:onClick="SearchPatNamePhone"
         app:layout_constraintLeft_toRightOf="@+id/search_txt"
         tools:layout_editor_absoluteY="0dp" />
 

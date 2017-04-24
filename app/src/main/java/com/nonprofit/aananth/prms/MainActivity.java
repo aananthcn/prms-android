@@ -32,11 +32,11 @@ public class MainActivity extends AppCompatActivity {
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
     private EditText user, password, patname, patphone, patmail;
-    private PatientDB patientdb = new PatientDB(this);
+    private PatientDB patientdb;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private RecyclerAdapter mAdapter;
-    List<Patient> patientList = new ArrayList<>();
+    List<Patient> patientList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Aananth added these lines
         currLayout = R.layout.login;
+        patientdb = new PatientDB(this);
+        patientList = patientdb.GetPatientList(null);
     }
 
     /**
@@ -90,10 +92,10 @@ public class MainActivity extends AppCompatActivity {
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mAdapter = new RecyclerAdapter(patientList);
+        mAdapter = new RecyclerAdapter(patientList); // patientList is updated in OnCreate()
         mRecyclerView.setAdapter(mAdapter);
 
-        preparePatientData();
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -101,23 +103,6 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         Log.d("Main Activity", "Layout set to current layout");
         setContentView(currLayout);
-    }
-
-    // Added by Aananth for patient list
-    private void preparePatientData() {
-        Patient p = new Patient("Aananth C N", "999", "a@b.com");
-        patientList.add(p);
-
-        p = new Patient("Manoja V", "888", "m@v.com");
-        patientList.add(p);
-
-        p = new Patient("Hardhik A", "888", "m@v.com");
-        patientList.add(p);
-
-        p = new Patient("Saanika A Smriti", "888", "m@v.com");
-        patientList.add(p);
-
-        mAdapter.notifyDataSetChanged();
     }
 
     // Added by Aananth: Add button handler
@@ -145,6 +130,34 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Main Activity", "Saved patient records");
         currLayout = R.layout.patients;
         setContentView(currLayout);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        patientList = patientdb.GetPatientList(null);
+        mAdapter = new RecyclerAdapter(patientList);
+        mRecyclerView.setAdapter(mAdapter);
+
+        mAdapter.notifyDataSetChanged();
+    }
+
+    public void SearchPatNamePhone(View view) {
+        EditText srchtxt;
+
+        srchtxt = (EditText) findViewById(R.id.search_txt);
+
+        Log.d("Main Activity", "Search patient records");
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        patientList = patientdb.GetPatientList(srchtxt.getText().toString());
+        mAdapter = new RecyclerAdapter(patientList);
+        mRecyclerView.setAdapter(mAdapter);
+
+        mAdapter.notifyDataSetChanged();
     }
 
     public void RefreshPatientList() {
