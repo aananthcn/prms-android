@@ -1,37 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:focusable="true"
+    android:clickable="true"
     android:layout_marginLeft="2dp"
     android:orientation="vertical">
 
     <TextView
         android:id="@+id/item_name"
-        android:layout_width="match_parent"
+        android:layout_width="250sp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="0.01"
+        android:layout_marginTop="6dp"
+        android:layout_alignParentTop="true"
         android:adjustViewBounds="true"
         android:text="name"
         android:textAllCaps="false"
-        android:textColor="#0060F0"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="#505050"
+        android:textStyle="bold"
+        android:textSize="17sp" />
 
     <TextView
         android:id="@+id/item_phone"
-        android:layout_width="match_parent"
+        android:layout_width="150sp"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:text="phone" />
+        android:layout_marginTop="6dp"
+        android:layout_alignParentRight="true"
+        android:text="phone"
+        android:textSize="15sp"
+        android:textColor="#606060"
+        android:layout_toEndOf="@+id/item_name" />
 
     <TextView
         android:id="@+id/item_email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center|start"
+        android:layout_below="@+id/item_name"
         android:layout_marginBottom="6dp"
         android:ellipsize="end"
         android:maxLines="5"
-        android:text="email" />
-</LinearLayout>
+        android:text="email"
+        android:textColorHighlight="#707070" />
+</RelativeLayout>
