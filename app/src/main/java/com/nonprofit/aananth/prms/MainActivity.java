@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         // Aananth added these lines
         currLayout = R.layout.login;
         patientdb = new PatientDB(this);
-        patientList = patientdb.GetPatientList(null);
     }
 
     /**
@@ -85,36 +84,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Main Activity", "Successful login");
         currLayout = R.layout.patients;
         setContentView(currLayout);
+        patientList = patientdb.GetPatientList(null);
 
-        // Aananth moved these lines from OnCreate()
-        mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
-        if (mRecyclerView == null) {
-            Log.d("Main Activity", "mRecylerView is null!!");
-            return;
-        }
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mAdapter = new RecyclerAdapter(patientList); // patientList is updated in OnCreate()
-        mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
-        mRecyclerView.setAdapter(mAdapter);
-
-        mAdapter.notifyDataSetChanged();
-
-        mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
-                mRecyclerView, new ClickListener() {
-            @Override
-            public void onClick(View view, final int position) {
-                //Values are passing to activity & to fragment as well
-                Toast.makeText(MainActivity.this, "Single Click on position        :"+position,
-                        Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onLongClick(View view, int position) {
-                Toast.makeText(MainActivity.this, "Long press on position :"+position,
-                        Toast.LENGTH_LONG).show();
-            }
-        }));
+        renderRecycleView();
     }
 
     @Override
@@ -185,11 +157,24 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Main Activity", "Search patient records");
         currLayout = R.layout.patients;
         setContentView(currLayout);
+        patientList = patientdb.GetPatientList(srchtxt.getText().toString());
 
+        renderRecycleView();
+    }
+
+    public static interface ClickListener{
+        public void onClick(View view,int position);
+        public void onLongClick(View view,int position);
+    }
+
+    public void renderRecycleView() {
         mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
+        if (mRecyclerView == null) {
+            Log.d("Main Activity", "mRecylerView is null!!");
+            return;
+        }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        patientList = patientdb.GetPatientList(srchtxt.getText().toString());
         mAdapter = new RecyclerAdapter(patientList);
         mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
         mRecyclerView.setAdapter(mAdapter);
@@ -212,13 +197,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }));
     }
-
-    public static interface ClickListener{
-        public void onClick(View view,int position);
-        public void onLongClick(View view,int position);
-    }
-
-
 
     public void RefreshPatientList() {
         String columns[] = {"name", "phone"};
