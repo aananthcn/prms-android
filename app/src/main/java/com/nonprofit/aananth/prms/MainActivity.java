@@ -9,6 +9,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RadioButton;
@@ -86,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(null);
 
-        renderRecycleView();
+        renderRecycleView(patientList);
     }
 
     @Override
@@ -121,32 +122,17 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Main Activity", "Saved patient records");
         currLayout = R.layout.patients;
         setContentView(currLayout);
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
         patientList = patientdb.GetPatientList(null);
-        mAdapter = new RecyclerAdapter(patientList);
-        mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
-        mRecyclerView.setAdapter(mAdapter);
 
-        mAdapter.notifyDataSetChanged();
+        renderRecycleView(patientList);
+    }
 
-        mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
-                mRecyclerView, new ClickListener() {
-            @Override
-            public void onClick(View view, final int position) {
-                //Values are passing to activity & to fragment as well
-                Toast.makeText(MainActivity.this, "Single Click on position        :"+position,
-                        Toast.LENGTH_SHORT).show();
-            }
+    public void CancelPatientRecordEdit(View view) {
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        patientList = patientdb.GetPatientList(null);
 
-            @Override
-            public void onLongClick(View view, int position) {
-                Toast.makeText(MainActivity.this, "Long press on position :"+position,
-                        Toast.LENGTH_LONG).show();
-            }
-        }));
+        renderRecycleView(patientList);
     }
 
     public void SearchPatNamePhone(View view) {
@@ -159,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(srchtxt.getText().toString());
 
-        renderRecycleView();
+        renderRecycleView(patientList);
     }
 
     public static interface ClickListener{
@@ -167,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
         public void onLongClick(View view,int position);
     }
 
-    public void renderRecycleView() {
+    public void renderRecycleView(final List<Patient> patlist) {
         mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
         if (mRecyclerView == null) {
             Log.d("Main Activity", "mRecylerView is null!!");
@@ -185,15 +171,32 @@ public class MainActivity extends AppCompatActivity {
                 mRecyclerView, new ClickListener() {
             @Override
             public void onClick(View view, final int position) {
-                //Values are passing to activity & to fragment as well
-                Toast.makeText(MainActivity.this, "Single Click on position        :"+position,
-                        Toast.LENGTH_SHORT).show();
+                // show patient history view
+                Toast.makeText(MainActivity.this, "Pos :"+position+" - "+patlist.get(position).mName.toString(),
+                        Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onLongClick(View view, int position) {
-                Toast.makeText(MainActivity.this, "Long press on position :"+position,
-                        Toast.LENGTH_LONG).show();
+                // edit patient data
+                currLayout = R.layout.add_edit;
+                setContentView(currLayout);
+
+                patname = (EditText) findViewById(R.id.fullName);
+                patname.setText(patlist.get(position).mName.toString());
+                patphone = (EditText) findViewById(R.id.phoneNo);
+                patphone.setText(patlist.get(position).mPhone.toString());
+                patmail = (EditText) findViewById(R.id.emailID);
+                patmail.setText(patlist.get(position).mEmail.toString());
+
+                TextView title = (TextView) findViewById(R.id.add_edit_txt);
+                title.setText("Edit Patient's Details");
+
+                Button patsav = (Button) findViewById(R.id.pat_save);
+                patsav.setText("Update");
+                Button patback = (Button) findViewById(R.id.pat_back);
+                patback.setText("Cancel");
+
             }
         }));
     }
