@@ -13,7 +13,7 @@ import java.util.List;
  */
 
 
-public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHolder> {
+public class PatRecyclerAdapter extends RecyclerView.Adapter<PatRecyclerAdapter.ViewHolder> {
     private List<Patient> patientList;
 
     // http://www.androidhive.info/2016/01/android-working-with-recycler-view/
@@ -29,14 +29,14 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public RecyclerAdapter(List<Patient> patList) {
+    public PatRecyclerAdapter(List<Patient> patList) {
         this.patientList = patList;
     }
 
     // Create new views (invoked by the layout manager)
     @Override
-    public RecyclerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
-                                                   int viewType) {
+    public PatRecyclerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
+                                                            int viewType) {
         // create a new view
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.pat_item_row,
                 parent, false);

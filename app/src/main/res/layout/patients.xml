@@ -43,12 +43,12 @@
         tools:layout_editor_absoluteX="4dp"/>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/pl_rv"
+        android:id="@+id/pat_rv"
         android:layout_width="0dp"
         android:layout_height="450dp"
         android:scrollbars="vertical"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/line_view"
-        tools:layout_marginLeft="4dp"/>
+        tools:layout_marginLeft="4dp" />
 </android.support.constraint.ConstraintLayout>

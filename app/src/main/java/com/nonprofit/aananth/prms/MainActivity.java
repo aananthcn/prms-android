@@ -19,8 +19,6 @@ import java.lang.String;
 import java.util.Arrays;
 import java.util.List;
 
-import static android.os.SystemClock.sleep;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private PatientDB patientdb;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
-    private RecyclerAdapter mAdapter;
+    private PatRecyclerAdapter mAdapter;
     private List<Patient> patientList;
     private Patient mCurrPatient;
     private Mode mMode;
@@ -92,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(null);
 
-        renderRecycleView(patientList);
+        renderPatRecycleView(patientList);
     }
 
     @Override
@@ -115,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         srchstr = srchtxt.getText().toString();
         patientList = patientdb.GetPatientList(srchstr);
 
-        renderRecycleView(patientList);
+        renderPatRecycleView(patientList);
 
         Button srchbtn = (Button) findViewById(R.id.search_btn);
         if (srchstr.length() > 0) {
@@ -163,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(null);
 
-        renderRecycleView(patientList);
+        renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
 
@@ -172,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(null);
 
-        renderRecycleView(patientList);
+        renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
 
@@ -187,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                         setContentView(currLayout);
 
                         patientList = patientdb.GetPatientList(null);
-                        renderRecycleView(patientList);
+                        renderPatRecycleView(patientList);
                     }
                 });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -197,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
                         setContentView(currLayout);
 
                         patientList = patientdb.GetPatientList(null);
-                        renderRecycleView(patientList);
+                        renderPatRecycleView(patientList);
                     }
                 });
 
@@ -212,15 +210,15 @@ public class MainActivity extends AppCompatActivity {
         public abstract void onLongClick(View view, int position);
     }
 
-    public void renderRecycleView(final List<Patient> patlist) {
-        mRecyclerView = (RecyclerView) findViewById(R.id.pl_rv);
+    public void renderPatRecycleView(final List<Patient> patlist) {
+        mRecyclerView = (RecyclerView) findViewById(R.id.pat_rv);
         if (mRecyclerView == null) {
             Log.d("Main Activity", "mRecylerView is null!!");
             return;
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mAdapter = new RecyclerAdapter(patientList);
+        mAdapter = new PatRecyclerAdapter(patientList);
         mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
         mRecyclerView.setAdapter(mAdapter);
 

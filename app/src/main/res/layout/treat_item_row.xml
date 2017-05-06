@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:clickable="true"
+    android:layout_marginLeft="2dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/item_compl"
+        android:layout_width="320sp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6sp"
+        android:layout_alignParentTop="true"
+        android:adjustViewBounds="true"
+        android:text="complaint"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/item_date"
+        android:layout_width="80sp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6sp"
+        android:layout_alignParentRight="true"
+        android:text="date"
+        android:textSize="15sp"
+        android:layout_toEndOf="@+id/item_compl" />
+
+    <TextView
+        android:id="@+id/item_treat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/item_compl"
+        android:layout_marginBottom="9dp"
+        android:ellipsize="end"
+        android:maxLines="5"
+        android:text="treatment"
+        android:textSize="15sp"/>
+</RelativeLayout>
