@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,11 +18,12 @@ public class PatientDB extends SQLiteOpenHelper{
     public static final String TABLE_PATIENTS = "patientlist";
     public static final String COLUMN_ID = "_id";
     private static final String DATABASE_NAME = "PRMS.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 4;
 
     // Database creation sql statement
-    private static final String DATABASE_CREATE = "CREATE TABLE IF NOT EXISTS " + TABLE_PATIENTS + " ( " + COLUMN_ID +
-            " INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100), phone VARCHAR(30), email VARCHAR(60), gender VARCHAR(20))";
+    private static final String DATABASE_CREATE = "CREATE TABLE IF NOT EXISTS " + TABLE_PATIENTS +
+            " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100), " +
+            "phone VARCHAR(30), email VARCHAR(60), gender VARCHAR(20), uid VARCHAR(100))";
 
     public PatientDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -38,21 +40,44 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.w(PatientDB.class.getName(),
                 "Upgrading database from version " + oldVersion + " to "
                         + newVersion + ", which will destroy all old data");
-        //db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATIENTS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATIENTS);
         onCreate(db);
     }
 
-    public void AddPatient(String name, String gender, String phone, String email) {
+    public void AddPatient(Patient pat) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Log.d("PatientDB", name + ", " + gender + ", " + phone + ", " + email);
-        db.execSQL("INSERT INTO " + TABLE_PATIENTS + " (name, phone, email, gender) VALUES ('"+ name +
-                "', '" + phone +"', '" + email + "', '" + gender + "')");
+        String uid = (pat.Name+ new Date()).replaceAll("\\s+","");
+        String query = "INSERT INTO " + TABLE_PATIENTS + " (name, phone, email, gender, uid) VALUES ('"+
+                pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '"+ uid + "')";
+
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+    }
+
+    public void UpdatePatient(Patient pat) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABLE_PATIENTS + " SET name = '" + pat.Name + "', phone = '" + pat.Phone +
+                "', email = '" + pat.Email + "', gender = '" + pat.Gender + "' WHERE uid = '" +
+                pat.Uid + "';";
+
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+    }
+
+    public void DeletePatient(Patient pat) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABLE_PATIENTS + " name = '" + pat.Name + "', phone = '" + pat.Phone +
+                "', email = '" + pat.Email + "', gender = '" + pat.Gender + "' WHERE uid = '" +
+                pat.Uid + "';";
+
+        Log.d("PatientDB", query);
+        db.execSQL(query);
     }
 
     public List<Patient> GetPatientList(String search) {
         List<Patient> patientList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
-        String name, phone, email, query;
+        String name, phone, email, query, pid, gender, uid;
         Patient pat;
         Cursor res;
 
@@ -67,7 +92,7 @@ public class PatientDB extends SQLiteOpenHelper{
         res.moveToFirst();
 
         if (res.getCount() <= 0) {
-            pat = new Patient("Empty", "", "");
+            pat = new Patient("Empty", "", "", "", "", "");
             patientList.add(pat);
 
             res.close();
@@ -79,9 +104,13 @@ public class PatientDB extends SQLiteOpenHelper{
             name = res.getString(res.getColumnIndex("name"));
             phone = res.getString(res.getColumnIndex("phone"));
             email = res.getString(res.getColumnIndex("email"));
+            gender = res.getString(res.getColumnIndex("gender"));
+            uid = res.getString(res.getColumnIndex("uid"));
+            pid = res.getString(res.getColumnIndex(COLUMN_ID));
+
 
             Log.d("PatientDB", "Name = "+ name + ", Phone: "+phone+", Email = "+email);
-            pat = new Patient(name, phone, email);
+            pat = new Patient(name, phone, email, gender, pid, uid);
             patientList.add(pat);
 
             res.moveToNext();

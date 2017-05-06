@@ -27,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("native-lib");
     }
 
+    // Aananth added this
+    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT}
+
     // Aananth added these member variables
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
@@ -37,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerAdapter mAdapter;
     private List<Patient> patientList;
     private Patient mCurrPatient;
+    private Mode mMode;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         // Aananth added these lines
         currLayout = R.layout.login;
         patientdb = new PatientDB(this);
+        mMode = Mode.NORMAL;
     }
 
     /**
@@ -123,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button delbtn = (Button) findViewById(R.id.pat_del);
         delbtn.setVisibility(View.INVISIBLE);
+        mMode = Mode.ADD_PAT;
     }
 
     public void SavePatientRecord(View view) {
@@ -139,14 +146,23 @@ public class MainActivity extends AppCompatActivity {
         else
             gender = "Female";
 
-        patientdb.AddPatient(patname.getText().toString(), gender, patphone.getText().toString(),
-                patmail.getText().toString());
+        if (mMode == Mode.ADD_PAT) {
+            Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
+                    patmail.getText().toString(), gender, "", "");
+            patientdb.AddPatient(pat);
+        }
+        else if (mMode == Mode.UPDATE_PAT) {
+            Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
+                    patmail.getText().toString(), gender, mCurrPatient.Pid, mCurrPatient.Uid);
+            patientdb.UpdatePatient(pat);
+        }
         Log.d("Main Activity", "Saved patient records");
         currLayout = R.layout.patients;
         setContentView(currLayout);
         patientList = patientdb.GetPatientList(null);
 
         renderRecycleView(patientList);
+        mMode = Mode.NORMAL;
     }
 
     public void CancelPatientRecordEdit(View view) {
@@ -155,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         patientList = patientdb.GetPatientList(null);
 
         renderRecycleView(patientList);
+        mMode = Mode.NORMAL;
     }
 
     public void DeleteCurrPatient(View view) {
@@ -163,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
         patientList = patientdb.GetPatientList(null);
 
         renderRecycleView(patientList);
+        mMode = Mode.NORMAL;
     }
 
     // interface class
@@ -197,15 +215,25 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLongClick(View view, int position) {
                 // edit patient data
+                mMode = Mode.UPDATE_PAT;
                 currLayout = R.layout.add_edit;
                 setContentView(currLayout);
 
+                mCurrPatient = patlist.get(position);
                 patname = (EditText) findViewById(R.id.fullName);
-                patname.setText(patlist.get(position).Name);
+                patname.setText(mCurrPatient.Name);
                 patphone = (EditText) findViewById(R.id.phoneNo);
-                patphone.setText(patlist.get(position).Phone);
+                patphone.setText(mCurrPatient.Phone);
                 patmail = (EditText) findViewById(R.id.emailID);
-                patmail.setText(patlist.get(position).Email);
+                patmail.setText(mCurrPatient.Email);
+                if (mCurrPatient.Gender == "Male") {
+                    RadioButton gender = (RadioButton) findViewById(R.id.radioMale);
+                    gender.setChecked(true);
+                }
+                else {
+                    RadioButton gender = (RadioButton) findViewById(R.id.radioFemale);
+                    gender.setChecked(true);
+                }
 
                 TextView title = (TextView) findViewById(R.id.add_edit_txt);
                 title.setText("Edit Patient's Details");

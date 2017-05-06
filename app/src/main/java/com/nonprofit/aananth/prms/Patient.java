@@ -12,14 +12,16 @@ public class Patient {
     String Name;
     String Phone;
     String Email;
-    String Id;
+    String Gender;
+    String Uid; // used to create tables for patient treatment records
+    String Pid; // used by database module
 
-    public Patient(String name, String phone, String email) {
+    public Patient(String name, String phone, String email, String gender, String pid, String uid) {
         Name = name;
         Phone = phone;
         Email = email;
-
-        Id = (name+ new Date()).replaceAll("\\s+","");
-        Log.d("Patient", Id);
+        Uid =  uid; // Unique ID
+        Pid = pid;
+        Gender = gender;
     }
 }
