@@ -1,6 +1,8 @@
 package com.nonprofit.aananth.prms;
 
+import android.content.DialogInterface;
 import android.content.res.Configuration;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -175,11 +177,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void DeleteCurrPatient(View view) {
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        patientList = patientdb.GetPatientList(null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure to delete this patient?");
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked ok button
+                        patientdb.DeletePatient(mCurrPatient);
+                        currLayout = R.layout.patients;
+                        setContentView(currLayout);
 
-        renderRecycleView(patientList);
+                        patientList = patientdb.GetPatientList(null);
+                        renderRecycleView(patientList);
+                    }
+                });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                        currLayout = R.layout.patients;
+                        setContentView(currLayout);
+
+                        patientList = patientdb.GetPatientList(null);
+                        renderRecycleView(patientList);
+                    }
+                });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
         mMode = Mode.NORMAL;
     }
 
