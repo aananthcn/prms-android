@@ -1,23 +1,19 @@
 package com.nonprofit.aananth.prms;
 
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.String;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private RecyclerAdapter mAdapter;
-    List<Patient> patientList;
+    private List<Patient> patientList;
+    private Patient mCurrPatient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,10 +94,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(currLayout);
     }
 
-    // Added by Aananth: Add button handler
+    // Added by Aananth: button handlers
+    public void SearchPatNamePhone(View view) {
+        EditText srchtxt;
+        String srchstr;
+
+        srchtxt = (EditText) findViewById(R.id.search_txt);
+
+        Log.d("Main Activity", "Search patient records");
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        srchstr = srchtxt.getText().toString();
+        patientList = patientdb.GetPatientList(srchstr);
+
+        renderRecycleView(patientList);
+
+        Button srchbtn = (Button) findViewById(R.id.search_btn);
+        if (srchstr.length() > 0) {
+            srchbtn.setText("Refresh");
+        } else {
+            srchbtn.setText("Search");
+        }
+    }
+
     public void AddNewPatient(View view) {
         currLayout = R.layout.add_edit;
         setContentView(currLayout);
+
+        Button delbtn = (Button) findViewById(R.id.pat_del);
+        delbtn.setVisibility(View.INVISIBLE);
     }
 
     public void SavePatientRecord(View view) {
@@ -135,22 +157,18 @@ public class MainActivity extends AppCompatActivity {
         renderRecycleView(patientList);
     }
 
-    public void SearchPatNamePhone(View view) {
-        EditText srchtxt;
-
-        srchtxt = (EditText) findViewById(R.id.search_txt);
-
-        Log.d("Main Activity", "Search patient records");
+    public void DeleteCurrPatient(View view) {
         currLayout = R.layout.patients;
         setContentView(currLayout);
-        patientList = patientdb.GetPatientList(srchtxt.getText().toString());
+        patientList = patientdb.GetPatientList(null);
 
         renderRecycleView(patientList);
     }
 
-    public static interface ClickListener{
-        public void onClick(View view,int position);
-        public void onLongClick(View view,int position);
+    // interface class
+    public static abstract class ClickListener{
+        public abstract void onClick(View view, int position);
+        public abstract void onLongClick(View view, int position);
     }
 
     public void renderRecycleView(final List<Patient> patlist) {
@@ -172,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view, final int position) {
                 // show patient history view
-                Toast.makeText(MainActivity.this, "Pos :"+position+" - "+patlist.get(position).mName.toString(),
+                Toast.makeText(MainActivity.this, "Pos :"+position+" - "+patlist.get(position).Name,
                         Toast.LENGTH_LONG).show();
             }
 
@@ -183,11 +201,11 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(currLayout);
 
                 patname = (EditText) findViewById(R.id.fullName);
-                patname.setText(patlist.get(position).mName.toString());
+                patname.setText(patlist.get(position).Name);
                 patphone = (EditText) findViewById(R.id.phoneNo);
-                patphone.setText(patlist.get(position).mPhone.toString());
+                patphone.setText(patlist.get(position).Phone);
                 patmail = (EditText) findViewById(R.id.emailID);
-                patmail.setText(patlist.get(position).mEmail.toString());
+                patmail.setText(patlist.get(position).Email);
 
                 TextView title = (TextView) findViewById(R.id.add_edit_txt);
                 title.setText("Edit Patient's Details");
@@ -199,27 +217,5 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }));
-    }
-
-    public void RefreshPatientList() {
-        String columns[] = {"name", "phone"};
-        ArrayList<ArrayList<String>> retList = new ArrayList<ArrayList<String>>();
-        ArrayList<String> list = new ArrayList<String>();
-        Cursor cursor = patientdb.getReadableDatabase().query(patientdb.TABLE_PATIENTS,
-                 columns, null, null, null, null, null);
-        if (cursor.moveToFirst()) {
-            do {
-                list = new ArrayList<String>();
-                for(int i=0; i<cursor.getColumnCount(); i++) {
-                    list.add( cursor.getString(i) );
-                }
-                retList.add(list);
-            } while (cursor.moveToNext());
-        }
-        if (cursor != null && !cursor.isClosed()) {
-            cursor.close();
-        }
-
-        //return retList;
     }
 }

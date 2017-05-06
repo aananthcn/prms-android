@@ -51,9 +51,9 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     public void onBindViewHolder(ViewHolder holder, int position) {
         // http://www.androidhive.info/2016/01/android-working-with-recycler-view/
         Patient patient = patientList.get(position);
-        holder.name.setText(patient.mName);
-        holder.email.setText(patient.mEmail);
-        holder.phone.setText(patient.mPhone);
+        holder.name.setText(patient.Name);
+        holder.email.setText(patient.Email);
+        holder.phone.setText(patient.Phone);
     }
 
     // Return the size of your dataset (invoked by the layout manager)
