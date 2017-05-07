@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Aananth added this
-    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT}
+    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT, ADD_TREAT, UPDATE_TREAT}
 
     // Aananth added these member variables
     private int currLayout;
@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void AddNewPatient(View view) {
-        currLayout = R.layout.add_edit;
+        currLayout = R.layout.add_edit_pat;
         setContentView(currLayout);
         setTitle("Add patient");
 
@@ -150,13 +150,14 @@ public class MainActivity extends AppCompatActivity {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, "", "");
             patientDB.AddPatient(pat);
+            Log.d("Main Activity", "Added patient '" + pat.Name + "'");
         }
         else if (mMode == Mode.UPDATE_PAT) {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, mCurrPatient.Pid, mCurrPatient.Uid);
             patientDB.UpdatePatient(pat);
+            Log.d("Main Activity", " Updated patient '" + pat.Name + "'");
         }
-        Log.d("Main Activity", "Saved patient records");
         patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
@@ -234,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
             public void onLongClick(View view, int position) {
                 // edit patient data
                 mMode = Mode.UPDATE_PAT;
-                currLayout = R.layout.add_edit;
+                currLayout = R.layout.add_edit_pat;
                 setContentView(currLayout);
                 setTitle("Update patient");
 
@@ -287,9 +288,9 @@ public class MainActivity extends AppCompatActivity {
                 mRecyclerView, new ClickListener() {
             @Override
             public void onClick(View view, final int position) {
-                // show patient history view
-                Toast.makeText(MainActivity.this, "OnClick - Pos :"+ position,
-                        Toast.LENGTH_LONG).show();
+                // edit treatment
+                mCurrTreatment = treatlist.get(position);
+                EditTreatmentRecord();
             }
 
             @Override
@@ -308,7 +309,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void AddNewTreatment(View view) {
-        Toast.makeText(MainActivity.this, "New treatment is under construction",
-                        Toast.LENGTH_LONG).show();
+        currLayout = R.layout.add_edit_treat;
+        setContentView(currLayout);
+
+        String title = "New treatment for " + mCurrPatient.Name;
+        setTitle(title);
+        mMode = Mode.ADD_TREAT;
+    }
+
+    public void SaveTreatmentRecord(View view) {
+        EditText comp, pres;
+
+        comp = (EditText)findViewById(R.id.complaint);
+        pres = (EditText)findViewById(R.id.prescription);
+
+        if (mMode == Mode.ADD_TREAT) {
+            Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
+                    pres.getText().toString());
+            treatmentDB.AddTreatment(treat);
+            Log.d("Main Activity", "Added treatment for " + treat.patient.Name);
+        }
+        else if (mMode == Mode.UPDATE_TREAT) {
+            Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
+                    comp.getText().toString(), pres.getText().toString());
+            treat.date = mCurrTreatment.date; //retain old date
+            treatmentDB.UpdateTreatment(treat);
+            Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
+        }
+
+        treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+        renderTreatRecycleView(treatmentList);
+        mMode = Mode.VIEW_TREAT;
+    }
+
+    public void EditTreatmentRecord() {
+        currLayout = R.layout.add_edit_treat;
+        setContentView(currLayout);
+
+        String title = "Update treatment for " + mCurrPatient.Name;
+        setTitle(title);
+        mMode = Mode.UPDATE_TREAT;
+
+        EditText compl = (EditText) findViewById(R.id.complaint);
+        compl.setText(mCurrTreatment.complaint);
+        EditText pres = (EditText) findViewById(R.id.prescription);
+        pres.setText(mCurrTreatment.prescription);
+
+        Button  savupd = (Button) findViewById(R.id.treat_sav_upd);
+        savupd.setText("Update");
+        Button  cancdel = (Button) findViewById(R.id.treat_canc_del);
+        cancdel.setText("Delete");
     }
 }

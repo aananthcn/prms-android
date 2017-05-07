@@ -11,21 +11,24 @@
         android:id="@+id/item_compl"
         android:layout_width="280sp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6sp"
         android:layout_alignParentTop="true"
+        android:layout_marginTop="6sp"
         android:adjustViewBounds="true"
         android:text="complaint"
-        android:textSize="15sp" />
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/item_date"
         android:layout_width="120sp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6sp"
         android:layout_alignParentRight="true"
+        android:layout_marginTop="6sp"
+        android:layout_toEndOf="@+id/item_compl"
         android:text="date"
-        android:textSize="13sp"
-        android:layout_toEndOf="@+id/item_compl" />
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/item_treat"

@@ -79,8 +79,15 @@ public class PatientDB extends SQLiteOpenHelper{
 
     public void DeletePatient(Patient pat) {
         SQLiteDatabase db = this.getWritableDatabase();
-        String query = "DELETE FROM " + TABLE_PATIENTS + " WHERE  uid = '" + pat.Uid + "';";
+        String query;
 
+        // delete treatment history
+        query = "DROP TABLE IF EXISTS '" + pat.Uid + "'";
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+
+        // delete the patient
+        query = "DELETE FROM " + TABLE_PATIENTS + " WHERE  uid = '" + pat.Uid + "';";
         Log.d("PatientDB", query);
         db.execSQL(query);
     }
