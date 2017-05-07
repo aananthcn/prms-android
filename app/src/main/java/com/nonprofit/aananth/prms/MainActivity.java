@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private Treatment mCurrTreatment;
     private TreatmentDB treatmentDB;
     private Mode mMode;
+    private Menu mMenu;
 
 
     @Override
@@ -93,6 +96,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Main Activity", "Successful login");
         patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
+
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, mMenu);
     }
 
     @Override
@@ -393,5 +399,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         onBackPressed();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        mMenu = menu;
+        return true;
     }
 }
