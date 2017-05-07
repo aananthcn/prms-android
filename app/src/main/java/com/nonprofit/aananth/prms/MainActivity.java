@@ -306,4 +306,9 @@ public class MainActivity extends AppCompatActivity {
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
+
+    public void AddNewTreatment(View view) {
+        Toast.makeText(MainActivity.this, "New treatment is under construction",
+                        Toast.LENGTH_LONG).show();
+    }
 }
