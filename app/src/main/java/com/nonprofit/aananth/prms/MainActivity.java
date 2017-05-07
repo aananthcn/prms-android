@@ -300,4 +300,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }));
     }
+
+    public void onBackPressed() {
+        patientList = patientDB.GetPatientList(null);
+        renderPatRecycleView(patientList);
+        mMode = Mode.NORMAL;
+    }
 }

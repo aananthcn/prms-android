@@ -40,7 +40,20 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.w(PatientDB.class.getName(),
                 "Upgrading database from version " + oldVersion + " to "
                         + newVersion + ", which will destroy all old data");
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATIENTS);
+
+        // TODO: In future we should add saving/exporting old tables before delete
+        String query;
+        List<Patient> patientList = GetPatientList(null);
+
+        // Delete all treatment history of all patients
+        for (Patient pat: patientList) {
+            query = "DROP TABLE IF EXISTS '" + pat.Uid + "'";
+            db.execSQL(query);
+        }
+
+        // Delete the patient table and then create it in the end
+        query = "DROP TABLE IF EXISTS " + TABLE_PATIENTS;
+        db.execSQL(query);
         onCreate(db);
     }
 
