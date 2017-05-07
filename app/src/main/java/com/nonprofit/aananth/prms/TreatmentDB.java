@@ -44,10 +44,9 @@ public class TreatmentDB extends SQLiteOpenHelper{
         //onCreate(db);
     }
 
-    public void createDatabaseifNotExist(SQLiteDatabase db, Treatment treat) {
-        String tablename = treat.patient.Uid;
-        String query = "CREATE TABLE IF NOT EXISTS " + tablename +
-            " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
+    public void createDatabaseifNotExist(SQLiteDatabase db, String tablename) {
+        String query = "CREATE TABLE IF NOT EXISTS '" + tablename +
+            "' ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
             "complaint VARCHAR(2048), prescription VARCHAR(2048))";
 
         Log.d("TreatmentDB", query);
@@ -57,10 +56,10 @@ public class TreatmentDB extends SQLiteOpenHelper{
     public void AddTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        createDatabaseifNotExist(db, treat);
+        createDatabaseifNotExist(db, treat.patient.Uid);
         String tablename = treat.patient.Uid;
 
-        String query = "INSERT INTO " + tablename + " (date, complaint, prescription) VALUES ('"+
+        String query = "INSERT INTO '" + tablename + "' (date, complaint, prescription) VALUES ('"+
                 treat.date + "', '" + treat.complaint +"', '" + treat.prescription + "')";
 
         Log.d("TreatmentDB", query);
@@ -71,7 +70,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
         String tablename = treat.patient.Uid;
 
-        String query = "UPDATE " + tablename + " SET date = '" + treat.date +
+        String query = "UPDATE '" + tablename + "' SET date = '" + treat.date +
                 "', complaint = '" + treat.complaint + "', prescription = '" + treat.prescription +
                 "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
@@ -83,7 +82,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
         String tablename = treat.patient.Uid;
 
-        String query = "DELETE FROM " + tablename + " WHERE " + TREAT_ID + " = '" + treat.tid + "';";
+        String query = "DELETE FROM '" + tablename + "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
@@ -97,7 +96,8 @@ public class TreatmentDB extends SQLiteOpenHelper{
         Treatment treat;
         String tablename = pat.Uid;
 
-        query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + " DESC";
+        createDatabaseifNotExist(db, tablename);
+        query = "SELECT * FROM '" + tablename + "' ORDER BY " + TREAT_ID + " DESC";
         Log.d("TreatmentDB", query);
         res = db.rawQuery(query, null);
         res.moveToFirst();

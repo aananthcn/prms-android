@@ -28,18 +28,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Aananth added this
-    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT}
+    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT}
 
     // Aananth added these member variables
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
     private EditText user, password, patname, patphone, patmail;
-    private PatientDB patientdb;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
-    private PatRecyclerAdapter mAdapter;
+    private PatRecyclerAdapter mPatRcAdapter;
     private List<Patient> patientList;
     private Patient mCurrPatient;
+    private PatientDB patientDB;
+    private TreatRecyclerAdapter mTreatRcAdapter;
+    private List<Treatment> treatmentList;
+    private Treatment mCurrTreatment;
+    private TreatmentDB treatmentDB;
     private Mode mMode;
 
 
@@ -54,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Aananth added these lines
         currLayout = R.layout.login;
-        patientdb = new PatientDB(this);
+        patientDB = new PatientDB(this);
+        treatmentDB = new TreatmentDB(this);
         mMode = Mode.NORMAL;
     }
 
@@ -86,10 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
         // remove these lines
         Log.d("Main Activity", "Successful login");
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        patientList = patientdb.GetPatientList(null);
-
+        patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
     }
 
@@ -108,11 +110,8 @@ public class MainActivity extends AppCompatActivity {
         srchtxt = (EditText) findViewById(R.id.search_txt);
 
         Log.d("Main Activity", "Search patient records");
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
         srchstr = srchtxt.getText().toString();
-        patientList = patientdb.GetPatientList(srchstr);
-
+        patientList = patientDB.GetPatientList(srchstr);
         renderPatRecycleView(patientList);
 
         Button srchbtn = (Button) findViewById(R.id.search_btn);
@@ -126,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
     public void AddNewPatient(View view) {
         currLayout = R.layout.add_edit;
         setContentView(currLayout);
+        setTitle("Add patient");
 
         Button delbtn = (Button) findViewById(R.id.pat_del);
         delbtn.setVisibility(View.INVISIBLE);
@@ -149,27 +149,21 @@ public class MainActivity extends AppCompatActivity {
         if (mMode == Mode.ADD_PAT) {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, "", "");
-            patientdb.AddPatient(pat);
+            patientDB.AddPatient(pat);
         }
         else if (mMode == Mode.UPDATE_PAT) {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, mCurrPatient.Pid, mCurrPatient.Uid);
-            patientdb.UpdatePatient(pat);
+            patientDB.UpdatePatient(pat);
         }
         Log.d("Main Activity", "Saved patient records");
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        patientList = patientdb.GetPatientList(null);
-
+        patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
 
     public void CancelPatientRecordEdit(View view) {
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        patientList = patientdb.GetPatientList(null);
-
+        patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
@@ -180,21 +174,15 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // User clicked ok button
-                        patientdb.DeletePatient(mCurrPatient);
-                        currLayout = R.layout.patients;
-                        setContentView(currLayout);
-
-                        patientList = patientdb.GetPatientList(null);
+                        patientDB.DeletePatient(mCurrPatient);
+                        patientList = patientDB.GetPatientList(null);
                         renderPatRecycleView(patientList);
                     }
                 });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // User cancelled the dialog
-                        currLayout = R.layout.patients;
-                        setContentView(currLayout);
-
-                        patientList = patientdb.GetPatientList(null);
+                        patientList = patientDB.GetPatientList(null);
                         renderPatRecycleView(patientList);
                     }
                 });
@@ -211,18 +199,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void renderPatRecycleView(final List<Patient> patlist) {
+        // set patient list layout
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        setTitle("Patient List");
+
         mRecyclerView = (RecyclerView) findViewById(R.id.pat_rv);
         if (mRecyclerView == null) {
-            Log.d("Main Activity", "mRecylerView is null!!");
+            Log.d("Main Activity", "renderPatRecycleView: mRecylerView is null!!");
             return;
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mAdapter = new PatRecyclerAdapter(patientList);
+        mPatRcAdapter = new PatRecyclerAdapter(patientList);
         mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
-        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setAdapter(mPatRcAdapter);
 
-        mAdapter.notifyDataSetChanged();
+        mPatRcAdapter.notifyDataSetChanged();
 
         mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
                 mRecyclerView, new ClickListener() {
@@ -231,6 +224,10 @@ public class MainActivity extends AppCompatActivity {
                 // show patient history view
                 Toast.makeText(MainActivity.this, "Pos :"+position+" - "+patlist.get(position).Name,
                         Toast.LENGTH_LONG).show();
+                mCurrPatient = patlist.get(position);
+                treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+                renderTreatRecycleView(treatmentList);
+                mMode = Mode.VIEW_TREAT;
             }
 
             @Override
@@ -239,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
                 mMode = Mode.UPDATE_PAT;
                 currLayout = R.layout.add_edit;
                 setContentView(currLayout);
+                setTitle("Update patient");
 
                 mCurrPatient = patlist.get(position);
                 patname = (EditText) findViewById(R.id.fullName);
@@ -256,14 +254,49 @@ public class MainActivity extends AppCompatActivity {
                     gender.setChecked(true);
                 }
 
-                TextView title = (TextView) findViewById(R.id.add_edit_txt);
-                title.setText("Edit Patient's Details");
-
                 Button patsav = (Button) findViewById(R.id.pat_save);
                 patsav.setText("Update");
                 Button patback = (Button) findViewById(R.id.pat_back);
                 patback.setText("Cancel");
 
+            }
+        }));
+    }
+
+
+    public void renderTreatRecycleView(final List<Treatment> treatlist) {
+        // set treatment list layout
+        currLayout = R.layout.treatments;
+        setContentView(currLayout);
+        setTitle(treatlist.get(0).patient.Name+"'s history");
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.treat_rv);
+        if (mRecyclerView == null) {
+            Log.d("Main Activity", "renderTreatRecycleView: mRecylerView is null!!");
+            return;
+        }
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mTreatRcAdapter = new TreatRecyclerAdapter(treatlist);
+        mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
+        mRecyclerView.setAdapter(mTreatRcAdapter);
+
+        mTreatRcAdapter.notifyDataSetChanged();
+
+        mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
+                mRecyclerView, new ClickListener() {
+            @Override
+            public void onClick(View view, final int position) {
+                // show patient history view
+                Toast.makeText(MainActivity.this, "OnClick - Pos :"+ position,
+                        Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+                // edit patient data
+                Toast.makeText(MainActivity.this, "onLongClick - Pos :"+ position,
+                        Toast.LENGTH_LONG).show();
             }
         }));
     }

@@ -9,7 +9,7 @@
 
     <TextView
         android:id="@+id/item_compl"
-        android:layout_width="320sp"
+        android:layout_width="280sp"
         android:layout_height="wrap_content"
         android:layout_marginTop="6sp"
         android:layout_alignParentTop="true"
@@ -19,12 +19,12 @@
 
     <TextView
         android:id="@+id/item_date"
-        android:layout_width="80sp"
+        android:layout_width="120sp"
         android:layout_height="wrap_content"
         android:layout_marginTop="6sp"
         android:layout_alignParentRight="true"
         android:text="date"
-        android:textSize="15sp"
+        android:textSize="13sp"
         android:layout_toEndOf="@+id/item_compl" />
 
     <TextView
