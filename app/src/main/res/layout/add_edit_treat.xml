@@ -37,6 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="Cancel"
+        android:onClick="CancelTreatmentEdit"
         app:layout_constraintTop_toBottomOf="@+id/prescription"
         android:layout_marginLeft="32dp"
         app:layout_constraintLeft_toLeftOf="parent" />

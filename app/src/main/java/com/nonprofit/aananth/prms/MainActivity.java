@@ -303,9 +303,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBackPressed() {
-        patientList = patientDB.GetPatientList(null);
-        renderPatRecycleView(patientList);
-        mMode = Mode.NORMAL;
+        if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
+            mMode = Mode.VIEW_TREAT;
+            treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+            renderTreatRecycleView(treatmentList);
+        }
+        else {
+            patientList = patientDB.GetPatientList(null);
+            renderPatRecycleView(patientList);
+            mMode = Mode.NORMAL;
+        }
     }
 
     public void AddNewTreatment(View view) {
@@ -359,5 +366,32 @@ public class MainActivity extends AppCompatActivity {
         savupd.setText("Update");
         Button  cancdel = (Button) findViewById(R.id.treat_canc_del);
         cancdel.setText("Delete");
+    }
+
+    public void CancelTreatmentEdit(View view) {
+        // print delete option if in update treatment mode!!
+        if (mMode == Mode.UPDATE_TREAT) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Are you sure to delete this treatment?");
+            builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // User clicked ok button
+                    treatmentDB.DeleteTreatment(mCurrTreatment);
+                    mMode = Mode.VIEW_TREAT;
+                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+                    renderTreatRecycleView(treatmentList);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // User cancelled the dialog
+                }
+            });
+
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+
+        onBackPressed();
     }
 }
