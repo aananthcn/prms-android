@@ -1,7 +1,12 @@
 package com.nonprofit.aananth.prms;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
+import android.os.Environment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,6 +15,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,9 +23,15 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.String;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.nonprofit.aananth.prms.PatientDB.DATABASE_NAME;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -31,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
 
     // Aananth added this
     public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT, ADD_TREAT, UPDATE_TREAT}
+    public static String PACKAGE_NAME;
+    public static final int CREATE_FILE = 101;
+    public static final int OPEN_FILE = 102;
 
     // Aananth added these member variables
     private int currLayout;
@@ -60,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         tv.setText(stringFromJNI());
 
         // Aananth added these lines
+        PACKAGE_NAME = getApplicationContext().getPackageName();
         currLayout = R.layout.login;
         patientDB = new PatientDB(this);
         treatmentDB = new TreatmentDB(this);
@@ -401,9 +417,139 @@ public class MainActivity extends AppCompatActivity {
         onBackPressed();
     }
 
+    // M E N U   H A N D L I N G
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         mMenu = menu;
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.export_db:
+                createFileOpenDialog(CREATE_FILE);
+                return true;
+            case R.id.import_db:
+                createFileOpenDialog(OPEN_FILE);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    // invoked from menu to import or export database
+    private void createFileOpenDialog(int action) {
+        Intent intent = new Intent()
+                .setType("*/*");
+        String msg;
+
+        if (action == CREATE_FILE) {
+            intent.setAction(Intent.ACTION_CREATE_DOCUMENT);
+            msg = "Create file";
+        }
+        else if (action == OPEN_FILE){
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            msg = "Select a file";
+        }
+        else {
+            Log.d("Main Activity", "Illegal action passed to createFileOpenDialog()");
+            return;
+        }
+
+        startActivityForResult(Intent.createChooser(intent, msg), action);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode,
+                                 Intent resultData) {
+        // The ACTION_OPEN_DOCUMENT intent was sent with the request code
+        // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
+        // response to some other intent, and the code below shouldn't run at all.
+        switch (requestCode) {
+            case CREATE_FILE:
+                if (resultCode == Activity.RESULT_OK) {
+                    // The document selected by the user won't be returned in the intent.
+                    // Instead, a URI to that document will be contained in the return intent
+                    // provided to this method as a parameter.
+                    // Pull that URI using resultData.getData().
+                    Uri uri = null;
+                    if (resultData != null) {
+                        uri = resultData.getData();
+                        Log.i("Main Activity", "Create file uri: " + uri.toString());
+                    }
+                }
+                break;
+            case OPEN_FILE:
+                if (resultCode == Activity.RESULT_OK) {
+                    Uri uri = null;
+                    if (resultData != null) {
+                        uri = resultData.getData();
+                        Log.i("Main Activity", "Open file uri: " + uri.toString());
+                    }
+                }
+                break;
+        }
+    }
+
+
+    private void exportDB() {
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String  currentDBPath= "//data//" + PACKAGE_NAME
+                        + "//databases//" + DATABASE_NAME;
+                String backupDBPath  = "/PRMS";
+                File currentDB = new File(data, currentDBPath);
+                File backupDB = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(),
+                        Toast.LENGTH_LONG).show();
+
+            }
+        } catch (Exception e) {
+
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
+                    .show();
+
+        }
+    }
+
+    // merge database
+    public void importDB() {
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data  = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String  currentDBPath= "//data//" + PACKAGE_NAME
+                        + "//databases//" + DATABASE_NAME;
+                String backupDBPath  = "/PRMS";
+                File  backupDB = new File(data, currentDBPath);
+                File currentDB = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(),
+                        Toast.LENGTH_LONG).show();
+
+            }
+        } catch (Exception e) {
+
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
+                    .show();
+
+        }
     }
 }
