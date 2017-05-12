@@ -1,12 +1,18 @@
 package com.nonprofit.aananth.prms;
 
+import android.Manifest;
 import android.app.Activity;
-import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,6 +33,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.lang.String;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     public static String PACKAGE_NAME;
     public static final int CREATE_FILE = 101;
     public static final int OPEN_FILE = 102;
+    public static final int MY_PERMISSION_REQUEST = 103;
 
     // Aananth added these member variables
     private int currLayout;
@@ -115,7 +124,62 @@ public class MainActivity extends AppCompatActivity {
 
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, mMenu);
+        getDynamicFilePermission();
     }
+
+    public void getDynamicFilePermission() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[] {
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSION_REQUEST
+                );
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSION_REQUEST: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -461,9 +525,36 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(intent, msg), action);
     }
 
+    private String convertUriToFilePath(Uri uri) {
+        String[] projection = {MediaStore.MediaColumns.DISPLAY_NAME};
+        String path = null;
+
+        ContentResolver cr = getApplicationContext().getContentResolver();
+        Cursor metaCursor = cr.query(uri, projection, null, null, null);
+        if (metaCursor != null) {
+            try {
+                if (metaCursor.moveToFirst()) {
+                    metaCursor.moveToFirst();
+                    path = metaCursor.getString(0);
+                    Log.d("Main Activity", "convertUriToFilePath(): path = "+path);
+                }
+            } finally {
+                metaCursor.close();
+            }
+        }
+        else {
+            Log.d("Main Activity", "convertUriToFilePath(): metaCursor is null!!");
+        }
+
+        //TODO: Add designs to find full path, till then use "Download" dir
+        return "/Download/"+path;
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode,
                                  Intent resultData) {
+        String path = null;
+        Uri uri = null;
         // The ACTION_OPEN_DOCUMENT intent was sent with the request code
         // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
         // response to some other intent, and the code below shouldn't run at all.
@@ -474,82 +565,102 @@ public class MainActivity extends AppCompatActivity {
                     // Instead, a URI to that document will be contained in the return intent
                     // provided to this method as a parameter.
                     // Pull that URI using resultData.getData().
-                    Uri uri = null;
                     if (resultData != null) {
                         uri = resultData.getData();
-                        Log.i("Main Activity", "Create file uri: " + uri.toString());
+                        path = convertUriToFilePath(uri);
+                        Log.i("Main Activity", "Create file: " + path);
+                        exportDB(path);
                     }
                 }
                 break;
             case OPEN_FILE:
                 if (resultCode == Activity.RESULT_OK) {
-                    Uri uri = null;
                     if (resultData != null) {
                         uri = resultData.getData();
-                        Log.i("Main Activity", "Open file uri: " + uri.toString());
+                        path = convertUriToFilePath(uri);
+                        Log.i("Main Activity", "Open file: " + path);
+                        importDB(path);
                     }
                 }
                 break;
         }
     }
 
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
-    private void exportDB() {
+    private void exportDB(String outpath) {
         try {
             File sd = Environment.getExternalStorageDirectory();
             File data = Environment.getDataDirectory();
 
-            if (sd.canWrite()) {
-                String  currentDBPath= "//data//" + PACKAGE_NAME
-                        + "//databases//" + DATABASE_NAME;
-                String backupDBPath  = "/PRMS";
-                File currentDB = new File(data, currentDBPath);
-                File backupDB = new File(sd, backupDBPath);
+            if (isExternalStorageWritable()) {
+                String  appDBpath = "/data/" + PACKAGE_NAME
+                        + "/databases/" + DATABASE_NAME;
+                File in_file = new File(data, appDBpath);
+                File out_file = new File(sd, outpath);
+                out_file.delete();
 
-                FileChannel src = new FileInputStream(currentDB).getChannel();
-                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                FileChannel src = new FileInputStream(in_file).getChannel();
+                FileChannel dst = new FileOutputStream(out_file).getChannel();
+                Log.i("Main Activity", "Exporting "+ src.size()+ " bytes from "+appDBpath+ " to "+ outpath);
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
-                Toast.makeText(getBaseContext(), backupDB.toString(),
+                Toast.makeText(getBaseContext(), out_file.toString(),
                         Toast.LENGTH_LONG).show();
 
             }
+            else {
+                Log.d("Main Activity", "exportDB(): Can't write into external storage!");
+            }
         } catch (Exception e) {
-
-            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
-                    .show();
-
+            Log.d("Main Activity", "Got exception! "+ e.toString());
         }
     }
 
     // merge database
-    public void importDB() {
+    public void importDB(String inpath) {
+        treatmentDB.close();
+        patientDB.close();
         try {
             File sd = Environment.getExternalStorageDirectory();
             File data  = Environment.getDataDirectory();
 
-            if (sd.canWrite()) {
-                String  currentDBPath= "//data//" + PACKAGE_NAME
-                        + "//databases//" + DATABASE_NAME;
-                String backupDBPath  = "/PRMS";
-                File  backupDB = new File(data, currentDBPath);
-                File currentDB = new File(sd, backupDBPath);
+            if (isExternalStorageWritable()) {
+                String  appDBpath = "/data/" + PACKAGE_NAME
+                        + "/databases/" + DATABASE_NAME;
+                File out_file = new File(data, appDBpath );
+                out_file.delete();
+                File in_file = new File(sd, inpath);
 
-                FileChannel src = new FileInputStream(currentDB).getChannel();
-                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                FileChannel dst = new FileOutputStream(out_file).getChannel();
+                FileChannel src = new FileInputStream(in_file).getChannel();
+                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+inpath+ " to "+ appDBpath );
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
-                Toast.makeText(getBaseContext(), backupDB.toString(),
+                Toast.makeText(getBaseContext(), in_file.toString(),
                         Toast.LENGTH_LONG).show();
 
             }
+            else {
+                Log.d("Main Activity", "exportDB(): Can't write into external storage!");
+            }
         } catch (Exception e) {
-
-            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
-                    .show();
-
+            Log.d("Main Activity", "Got exception! "+ e.toString());
         }
+
+        // Restart the app to read the new imported Database
+        Intent i = getBaseContext().getPackageManager()
+                .getLaunchIntentForPackage( getBaseContext().getPackageName() );
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        finish();
+        startActivity(i);
     }
 }
