@@ -28,7 +28,8 @@
         android:layout_toEndOf="@+id/item_compl"
         android:text="date"
         android:textColor="@color/colorPrimaryDark"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/item_treat"

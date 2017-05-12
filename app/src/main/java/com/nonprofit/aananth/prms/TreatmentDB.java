@@ -21,10 +21,6 @@ public class TreatmentDB extends SQLiteOpenHelper{
     public static final String TREAT_ID = "tid";
 
     // Database creation sql statement
-    private static final String DATABASE_CREATE = "CREATE TABLE IF NOT EXISTS " + TABLE_PATIENTS +
-            " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100), " +
-            "phone VARCHAR(30), email VARCHAR(60), gender VARCHAR(20), uid VARCHAR(100))";
-
     public TreatmentDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -46,7 +42,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
     public void createDatabaseifNotExist(SQLiteDatabase db, String tablename) {
         String query = "CREATE TABLE IF NOT EXISTS '" + tablename +
             "' ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
-            "complaint VARCHAR(2048), prescription VARCHAR(2048))";
+            "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
@@ -58,8 +54,9 @@ public class TreatmentDB extends SQLiteOpenHelper{
         createDatabaseifNotExist(db, treat.patient.Uid);
         String tablename = treat.patient.Uid;
 
-        String query = "INSERT INTO '" + tablename + "' (date, complaint, prescription) VALUES ('"+
-                treat.date + "', '" + treat.complaint +"', '" + treat.prescription + "')";
+        String query = "INSERT INTO '" + tablename + "' (date, complaint, prescription, doctor) VALUES ('"+
+                treat.date + "', '" + treat.complaint +"', '" + treat.prescription +"', '" +
+                treat.doctor + "')";
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
@@ -90,7 +87,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
     public List<Treatment> GetTreatmentList(Patient pat) {
         List<Treatment> treatmentList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
-        String tid, date, complaint, prescription, query;
+        String tid, date, complaint, prescription, doctor, query;
         Cursor res;
         Treatment treat;
         String tablename = pat.Uid;
@@ -102,7 +99,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         res.moveToFirst();
 
         if (res.getCount() <= 0) {
-            treat = new Treatment(pat, "0", "Empty", "Empty");
+            treat = new Treatment(pat, "0", "Empty", "Empty", "");
             treatmentList.add(treat);
 
             res.close();
@@ -114,12 +111,13 @@ public class TreatmentDB extends SQLiteOpenHelper{
             date = res.getString(res.getColumnIndex("date"));
             complaint = res.getString(res.getColumnIndex("complaint"));
             prescription = res.getString(res.getColumnIndex("prescription"));
+            doctor = res.getString(res.getColumnIndex("doctor"));
             tid = res.getString(res.getColumnIndex(TREAT_ID));
 
 
             Log.d("TreatmentDB", "Date = "+ date + ", Complaint = " + complaint +
                     ", Prescription = " + prescription);
-            treat = new Treatment(pat, tid, complaint, prescription);
+            treat = new Treatment(pat, tid, complaint, prescription, doctor);
             treatmentList.add(treat);
 
             res.moveToNext();

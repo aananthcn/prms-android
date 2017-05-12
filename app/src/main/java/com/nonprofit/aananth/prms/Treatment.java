@@ -12,9 +12,10 @@ public class Treatment {
     String date;
     String complaint;
     String prescription;
+    String doctor;
     String tid;
 
-    public Treatment(Patient pat, String id, String comp, String pres) {
+    public Treatment(Patient pat, String id, String comp, String pres, String doc) {
         // get current date and  convert to simple readable format
         Date today = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
@@ -24,5 +25,6 @@ public class Treatment {
         tid = id;
         complaint = comp;
         prescription = pres;
+        doctor = doc;
     }
 }

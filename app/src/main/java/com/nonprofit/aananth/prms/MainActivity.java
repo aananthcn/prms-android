@@ -33,8 +33,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.lang.String;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     // Aananth added these member variables
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
+    private String mDoctor;
     private EditText user, password, patname, patphone, patmail;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
@@ -101,9 +100,10 @@ public class MainActivity extends AppCompatActivity {
         // get the user inputs
         user = (EditText)findViewById(R.id.user);
         password = (EditText)findViewById(R.id.password);
+        mDoctor = user.getText().toString();
 
         // check if the credentials are valid. TODO: Implement a secure and better auth logic
-        if (doctors.contains(user.getText().toString())) {
+        if (doctors.contains(mDoctor)) {
             if (password.getText().toString().contains("saami123")) {
                 Log.d("Main Activity", "Successful login");
                 currLayout = R.layout.patients;
@@ -309,8 +309,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view, final int position) {
                 // show patient history view
-                Toast.makeText(MainActivity.this, "Pos :"+position+" - "+patlist.get(position).Name,
-                        Toast.LENGTH_LONG).show();
                 mCurrPatient = patlist.get(position);
                 treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
                 renderTreatRecycleView(treatmentList);
@@ -374,16 +372,15 @@ public class MainActivity extends AppCompatActivity {
                 mRecyclerView, new ClickListener() {
             @Override
             public void onClick(View view, final int position) {
-                // edit treatment
-                mCurrTreatment = treatlist.get(position);
-                EditTreatmentRecord();
+                Toast.makeText(MainActivity.this, treatlist.get(position).complaint,
+                        Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onLongClick(View view, int position) {
-                // edit patient data
-                Toast.makeText(MainActivity.this, "onLongClick - Pos :"+ position,
-                        Toast.LENGTH_LONG).show();
+                // edit treatment
+                mCurrTreatment = treatlist.get(position);
+                EditTreatmentRecord();
             }
         }));
     }
@@ -418,13 +415,13 @@ public class MainActivity extends AppCompatActivity {
 
         if (mMode == Mode.ADD_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
-                    pres.getText().toString());
+                    pres.getText().toString(), mDoctor);
             treatmentDB.AddTreatment(treat);
             Log.d("Main Activity", "Added treatment for " + treat.patient.Name);
         }
         else if (mMode == Mode.UPDATE_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
-                    comp.getText().toString(), pres.getText().toString());
+                    comp.getText().toString(), pres.getText().toString(), mDoctor);
             treat.date = mCurrTreatment.date; //retain old date
             treatmentDB.UpdateTreatment(treat);
             Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
