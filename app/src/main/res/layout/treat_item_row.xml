@@ -9,9 +9,10 @@
 
     <TextView
         android:id="@+id/item_compl"
-        android:layout_width="280sp"
+        android:layout_width="277sp"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
+        android:layout_marginRight="3sp"
         android:layout_marginTop="6sp"
         android:adjustViewBounds="true"
         android:text="complaint"
@@ -24,7 +25,7 @@
         android:layout_width="120sp"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="6sp"
+        android:layout_marginTop="8sp"
         android:layout_toEndOf="@+id/item_compl"
         android:text="date"
         android:textColor="@color/colorPrimaryDark"

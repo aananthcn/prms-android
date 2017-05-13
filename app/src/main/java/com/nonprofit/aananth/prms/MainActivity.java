@@ -37,7 +37,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.nonprofit.aananth.prms.PatientDB.DATABASE_NAME;
+import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -598,7 +598,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (isExternalStorageWritable()) {
                 String  appDBpath = "/data/" + PACKAGE_NAME
-                        + "/databases/" + DATABASE_NAME;
+                        + "/databases/" + MAIN_DATABASE;
                 File in_file = new File(data, appDBpath);
                 File out_file = new File(sd, outpath);
                 out_file.delete();
@@ -623,6 +623,7 @@ public class MainActivity extends AppCompatActivity {
 
     // merge database
     public void importDB(String inpath) {
+        String merged_filepath = patientDB.mergeDB(inpath);
         treatmentDB.close();
         patientDB.close();
         try {
@@ -631,14 +632,15 @@ public class MainActivity extends AppCompatActivity {
 
             if (isExternalStorageWritable()) {
                 String  appDBpath = "/data/" + PACKAGE_NAME
-                        + "/databases/" + DATABASE_NAME;
+                        + "/databases/" + MAIN_DATABASE;
                 File out_file = new File(data, appDBpath );
                 out_file.delete();
                 File in_file = new File(sd, inpath);
 
                 FileChannel dst = new FileOutputStream(out_file).getChannel();
                 FileChannel src = new FileInputStream(in_file).getChannel();
-                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+inpath+ " to "+ appDBpath );
+                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+inpath+
+                        " to "+ appDBpath );
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();

@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.nonprofit.aananth.prms.PatientDB.DATABASE_VERSION;
-import static com.nonprofit.aananth.prms.PatientDB.TABLE_PATIENTS;
-import static com.nonprofit.aananth.prms.PatientDB.DATABASE_NAME;
+import static com.nonprofit.aananth.prms.PatientDB.PATIENT_LIST;
+import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 /**
  * Created by aananth on 06/05/17.
@@ -22,7 +22,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
     // Database creation sql statement
     public TreatmentDB(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context, MAIN_DATABASE, null, DATABASE_VERSION);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         //Log.w(TreatmentDB.class.getName(),
         //        "Upgrading database from version " + oldVersion + " to "
         //                + newVersion + ", which will destroy all old data");
-        //db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATIENTS);
+        //db.execSQL("DROP TABLE IF EXISTS " + PATIENT_LIST);
         //onCreate(db);
     }
 
