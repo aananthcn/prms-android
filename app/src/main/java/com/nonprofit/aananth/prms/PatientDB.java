@@ -2,7 +2,10 @@ package com.nonprofit.aananth.prms;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatatypeMismatchException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Environment;
 import android.util.Log;
@@ -66,18 +69,20 @@ public class PatientDB extends SQLiteOpenHelper{
 
         query = "CREATE TABLE IF NOT EXISTS " + tablename + " ( " + PKEY +
                 " INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100), phone VARCHAR(30), " +
-                " email VARCHAR(60), gender VARCHAR(20), uid VARCHAR(100) )";
+                " email VARCHAR(60), gender VARCHAR(20), uid VARCHAR(100) UNIQUE )";
 
         return query;
     }
 
-    public void AddPatient(Patient pat) {
-        AddPatientToDB(pat, null);
+    // return 1 on success, 0 on failure
+    public int AddPatient(Patient pat) {
+        return AddPatientToDB(pat, null);
     }
 
-    private void AddPatientToDB(Patient pat, String dbname) {
+    private int AddPatientToDB(Patient pat, String dbname) {
         SQLiteDatabase db = this.getWritableDatabase();
         String uid, tablename;
+        int retval = 1;
 
         if (dbname == null) {
             // new patient added from UI
@@ -94,7 +99,23 @@ public class PatientDB extends SQLiteOpenHelper{
                 pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '"+ uid + "')";
 
         Log.d("PatientDB", query);
-        db.execSQL(query);
+        try {
+            db.execSQL(query);
+        }
+        catch (SQLException mSQLException) {
+            if(mSQLException instanceof SQLiteConstraintException){
+                //some toast message to user.
+                Log.d("PatientDB", "AddPatient: SQLiteConstraintException");
+            }else if(mSQLException instanceof SQLiteDatatypeMismatchException) {
+                //some toast message to user.
+                Log.d("PatientDB", "AddPatient: SQLiteDatatypeMismatchException");
+            }else {
+                throw mSQLException;
+            }
+            retval = 0; // add failure!!
+        }
+
+        return retval;
     }
 
     public void UpdatePatient(Patient pat) {
@@ -179,10 +200,14 @@ public class PatientDB extends SQLiteOpenHelper{
         return patientList;
     }
 
-    private void CopyPatListToDB(List<Patient> patList, String dbname) {
+    private int CopyPatListToDB(List<Patient> patList, String dbname) {
+        int copy_count = 0;
+
         for (Patient pat: patList) {
-            AddPatientToDB(pat, dbname);
+            copy_count += AddPatientToDB(pat, dbname);
         }
+
+        return copy_count;
     }
 
     public String mergeDB(String inpath) {
@@ -193,7 +218,7 @@ public class PatientDB extends SQLiteOpenHelper{
         String IMPDB_LN = "impdb";
         String NEWDB_LN = "newdb";
         String query;
-        int total_records;
+        int total_records, copied_records = 0;
 
         List<Patient> mainPatList = new ArrayList<>();
         List<Patient> impoPatList = new ArrayList<>();
@@ -221,11 +246,11 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // Copy records to new database
         mainPatList = GetPatientListFromDB(null, null); // main database
-        CopyPatListToDB(mainPatList, NEWDB_LN);
+        copied_records += CopyPatListToDB(mainPatList, NEWDB_LN);
         impoPatList = GetPatientListFromDB(null, IMPDB_LN); // to be imported database
-        CopyPatListToDB(impoPatList, NEWDB_LN);
+        copied_records += CopyPatListToDB(impoPatList, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
-        Log.d("PatientDB", "Total patients added: "+ total_records);
+        Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
 
 
         // Commit and detach
