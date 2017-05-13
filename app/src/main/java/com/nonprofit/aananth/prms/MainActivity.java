@@ -634,19 +634,19 @@ public class MainActivity extends AppCompatActivity {
                 String  appDBpath = "/data/" + PACKAGE_NAME
                         + "/databases/" + MAIN_DATABASE;
                 File out_file = new File(data, appDBpath );
-                out_file.delete();
-                File in_file = new File(sd, inpath);
+                //out_file.delete();
+                File in_file = new File(merged_filepath);
 
                 FileChannel dst = new FileOutputStream(out_file).getChannel();
                 FileChannel src = new FileInputStream(in_file).getChannel();
-                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+inpath+
+                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+merged_filepath+
                         " to "+ appDBpath );
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
                 Toast.makeText(getBaseContext(), in_file.toString(),
                         Toast.LENGTH_LONG).show();
-
+                in_file.delete(); // delete temp file
             }
             else {
                 Log.d("Main Activity", "exportDB(): Can't write into external storage!");

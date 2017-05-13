@@ -72,9 +72,25 @@ public class PatientDB extends SQLiteOpenHelper{
     }
 
     public void AddPatient(Patient pat) {
+        AddPatientToDB(pat, null);
+    }
+
+    private void AddPatientToDB(Patient pat, String dbname) {
         SQLiteDatabase db = this.getWritableDatabase();
-        String uid = (pat.Name+ new Date()).replaceAll("\\s+","");
-        String query = "INSERT INTO " + PATIENT_LIST + " (name, phone, email, gender, uid) VALUES ('"+
+        String uid, tablename;
+
+        if (dbname == null) {
+            // new patient added from UI
+            tablename = PATIENT_LIST;
+            uid = (pat.Name+ new Date()).replaceAll("\\s+","");
+        } else {
+            // patient from other db is copied to new db
+            tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
+            uid = pat.Uid;
+        }
+
+
+        String query = "INSERT INTO " + tablename + " (name, phone, email, gender, uid) VALUES ('"+
                 pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '"+ uid + "')";
 
         Log.d("PatientDB", query);
@@ -101,7 +117,7 @@ public class PatientDB extends SQLiteOpenHelper{
         db.execSQL(query);
 
         // delete the patient
-        query = "DELETE FROM " + PATIENT_LIST + " WHERE  uid = '" + pat.Uid + "';";
+        query = "DELETE FROM " + PATIENT_LIST + " WHERE " + PKEY + " = '" + pat.Pid + "';";
         Log.d("PatientDB", query);
         db.execSQL(query);
     }
@@ -110,7 +126,7 @@ public class PatientDB extends SQLiteOpenHelper{
         return GetPatientListFromDB(search, null);
     }
 
-    public List<Patient> GetPatientListFromDB(String search, String dbname) {
+    private List<Patient> GetPatientListFromDB(String search, String dbname) {
         List<Patient> patientList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
         String name, phone, email, pid, gender, uid;
@@ -163,11 +179,21 @@ public class PatientDB extends SQLiteOpenHelper{
         return patientList;
     }
 
+    private void CopyPatListToDB(List<Patient> patList, String dbname) {
+        for (Patient pat: patList) {
+            AddPatientToDB(pat, dbname);
+        }
+    }
+
     public String mergeDB(String inpath) {
         SQLiteDatabase db = this.getWritableDatabase();
-        String outdb = "TEMP.db";
-        String importdbpath = Environment.getExternalStorageDirectory().toString() + inpath;
+        String storagepath = Environment.getExternalStorageDirectory().toString();
+        String exportdbpath = storagepath + "/Download/TEMP.db";
+        String importdbpath = storagepath + inpath;
+        String IMPDB_LN = "impdb";
+        String NEWDB_LN = "newdb";
         String query;
+        int total_records;
 
         List<Patient> mainPatList = new ArrayList<>();
         List<Patient> impoPatList = new ArrayList<>();
@@ -176,30 +202,44 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
 
-        query = "ATTACH DATABASE '"+ importdbpath +"' as impdb"; // db that will be imported
+        // Attach to new and imported databases
+        query = "ATTACH DATABASE '"+ importdbpath +"' as " + IMPDB_LN; // db that will be imported
         Log.d("PatientDB", query);
         db.execSQL(query);
-
-        impoPatList = GetPatientListFromDB(null, "impdb");
-        Log.d("PatientDB", "Size of imported patient list: "+ impoPatList.size());
-
-
-        mainPatList = GetPatientListFromDB(null, null);
-
-        query = "ATTACH DATABASE '"+ outdb + "' as newdb"; // db that will be created
+        query = "ATTACH DATABASE '"+ exportdbpath + "' as "+ NEWDB_LN; // db that will be created
+        Log.d("PatientDB", query);
+        db.execSQL(query);
         query = "BEGIN";
-        query = getCreateTableStr("newdb", PATIENT_LIST);
-
-
-        query = "COMMIT";
-
-        query = "DETACH impdb";
         Log.d("PatientDB", query);
         db.execSQL(query);
 
-        query = "DETACH newdb";
+        // Create patientlist table in the new database
+        query = getCreateTableStr(NEWDB_LN, PATIENT_LIST);
+        Log.d("PatientDB", query);
+        db.execSQL(query);
 
 
-        return null;
+        // Copy records to new database
+        mainPatList = GetPatientListFromDB(null, null); // main database
+        CopyPatListToDB(mainPatList, NEWDB_LN);
+        impoPatList = GetPatientListFromDB(null, IMPDB_LN); // to be imported database
+        CopyPatListToDB(impoPatList, NEWDB_LN);
+        total_records = mainPatList.size() + impoPatList.size();
+        Log.d("PatientDB", "Total patients added: "+ total_records);
+
+
+        // Commit and detach
+        query = "COMMIT";
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+        query = "DETACH " + IMPDB_LN;
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+        query = "DETACH "+ NEWDB_LN;
+        Log.d("PatientDB", query);
+        db.execSQL(query);
+
+
+        return exportdbpath;
     }
 }
