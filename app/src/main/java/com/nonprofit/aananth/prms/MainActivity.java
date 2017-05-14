@@ -23,9 +23,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,13 +37,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.lang.String;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -48,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Aananth added this
-    public enum Mode {NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT, ADD_TREAT, UPDATE_TREAT}
+    public enum Mode {LOGIN, NORMAL, ADD_PAT, UPDATE_PAT, VIEW_TREAT, ADD_TREAT, UPDATE_TREAT}
     public static String PACKAGE_NAME;
     public static final int CREATE_FILE = 101;
     public static final int OPEN_FILE = 102;
@@ -57,8 +61,11 @@ public class MainActivity extends AppCompatActivity {
     // Aananth added these member variables
     private int currLayout;
     private List doctors = Arrays.asList("Jegadish", "Rama");
-    private String mDoctor;
-    private EditText user, password, patname, patphone, patmail;
+    private Doctor mDoctor;
+    private DoctorDB doctorDB;
+    private List<Doctor> mDocList;
+    private EditText user, patname, patphone, patmail;
+    Spinner spinner;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private PatRecyclerAdapter mPatRcAdapter;
@@ -78,16 +85,28 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
-        // Example of a call to a native method
-        TextView tv = (TextView) findViewById(R.id.message_txt);
-        tv.setText(stringFromJNI());
-
         // Aananth added these lines
         PACKAGE_NAME = getApplicationContext().getPackageName();
         currLayout = R.layout.login;
         patientDB = new PatientDB(this);
         treatmentDB = new TreatmentDB(this);
-        mMode = Mode.NORMAL;
+        doctorDB = new DoctorDB(this);
+        mMode = Mode.LOGIN;
+
+        setupDoctorLoginSpinner();
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        // On selecting a spinner item
+        String item = parent.getItemAtPosition(position).toString();
+        mDoctor = mDocList.get(position);
+
+        // Showing selected spinner item
+        Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
+    }
+    public void onNothingSelected(AdapterView<?> arg0) {
+        // TODO Auto-generated method stub
     }
 
     /**
@@ -97,28 +116,11 @@ public class MainActivity extends AppCompatActivity {
     public native String stringFromJNI();
 
     public void onLogin(View view) {
-        // get the user inputs
-        user = (EditText)findViewById(R.id.user);
-        password = (EditText)findViewById(R.id.password);
-        mDoctor = user.getText().toString();
-
-        // check if the credentials are valid. TODO: Implement a secure and better auth logic
-        if (doctors.contains(mDoctor)) {
-            if (password.getText().toString().contains("saami123")) {
-                Log.d("Main Activity", "Successful login");
-                currLayout = R.layout.patients;
-                setContentView(currLayout);
-            }
-            else {
-                Log.d("Main Activity", "Failure! Password: " + password.getText().toString());
-            }
-        }
-        else {
-            Log.d("Main Activity", "Failure! Username: " + user.getText().toString());
-        }
-
-        // remove these lines
         Log.d("Main Activity", "Successful login");
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        mMode = Mode.NORMAL;
+
         patientList = patientDB.GetPatientList(null);
         renderPatRecycleView(patientList);
 
@@ -415,13 +417,13 @@ public class MainActivity extends AppCompatActivity {
 
         if (mMode == Mode.ADD_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
-                    pres.getText().toString(), mDoctor);
+                    pres.getText().toString(), mDoctor.name );
             treatmentDB.AddTreatment(treat);
             Log.d("Main Activity", "Added treatment for " + treat.patient.Name);
         }
         else if (mMode == Mode.UPDATE_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
-                    comp.getText().toString(), pres.getText().toString(), mDoctor);
+                    comp.getText().toString(), pres.getText().toString(), mDoctor.name);
             treat.date = mCurrTreatment.date; //retain old date
             treatmentDB.UpdateTreatment(treat);
             Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
@@ -481,6 +483,8 @@ public class MainActivity extends AppCompatActivity {
     // M E N U   H A N D L I N G
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.login_menu, menu);
         mMenu = menu;
         return true;
     }
@@ -494,6 +498,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.import_db:
                 createFileOpenDialog(OPEN_FILE);
+                return true;
+            case R.id.add_doctor:
+                AddNewDoctor();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -661,5 +668,66 @@ public class MainActivity extends AppCompatActivity {
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         finish();
         startActivity(i);
+    }
+
+
+    // D O C T O R   H A N D L I N G
+    private void setupDoctorLoginSpinner() {
+        // Welcome message
+        TextView tv = (TextView) findViewById(R.id.message_txt);
+        tv.setText(stringFromJNI());
+
+        // Set login options
+        spinner = (Spinner)findViewById(R.id.doctor);
+        List<String> loginList = new ArrayList<String>();
+        mDocList = doctorDB.GetDoctorList();
+        for (Doctor doc : mDocList) {
+            loginList.add(doc.name);
+        }
+
+        // Creating adapter for spinner
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, loginList);
+
+        // Drop down layout style - list view with radio button
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // attaching data adapter to spinner
+        spinner.setAdapter(dataAdapter);
+    }
+
+    public void AddNewDoctor() {
+        currLayout = R.layout.add_edit_doc;
+        setContentView(currLayout);
+    }
+
+    public void SaveDocRecord(View view) {
+        EditText docName, docPhone, docEmail;
+        String name, ph, email;
+
+        docName = (EditText)findViewById(R.id.docName);
+        docPhone = (EditText)findViewById(R.id.docPhone);
+        docEmail = (EditText)findViewById(R.id.docEmail);
+
+        name = docName.getText().toString();
+        ph = docPhone.getText().toString();
+        email = docEmail.getText().toString();
+
+        Doctor doc = new Doctor(name, ph, email);
+        doctorDB.AddDoctor(doc);
+
+        if (mMode == Mode.LOGIN) {
+            currLayout = R.layout.login;
+            setContentView(currLayout);
+            setupDoctorLoginSpinner();
+        }
+        else {
+            currLayout = R.layout.patients;
+            setContentView(currLayout);
+
+            patientList = patientDB.GetPatientList(null);
+            renderPatRecycleView(patientList);
+            mMode = Mode.NORMAL;
+        }
     }
 }

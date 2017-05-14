@@ -174,7 +174,6 @@ public class TreatmentDB extends SQLiteOpenHelper{
                 AddTreatmentToDB(db, trt, dstdbn);
                 dstList.add(trt);
                 count++;
-                break;
             }
         }
         Log.d("TreatmentDB", "Added "+count+" treatments to " + dstdbn);
