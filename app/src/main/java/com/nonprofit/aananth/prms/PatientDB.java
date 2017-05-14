@@ -118,6 +118,19 @@ public class PatientDB extends SQLiteOpenHelper{
             retval = 0; // add failure!!
         }
 
+        // If this is new patient, then create Treatment Table
+        if (retval > 0) {
+            TreatmentDB treatDB = new TreatmentDB(mContext);
+            String treatTable;
+
+            if (dbname == null)
+                treatTable = uid;
+            else
+                treatTable = dbname + "." + uid;
+
+            treatDB.createTreatmentTableIfNotExist(db, treatTable);
+        }
+
         return retval;
     }
 
@@ -158,18 +171,17 @@ public class PatientDB extends SQLiteOpenHelper{
         Patient pat;
         Cursor res;
 
-        if (dbname == null) {
+        if (dbname == null)
             tablename = PATIENT_LIST;
-        } else {
+        else
             tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
-        }
 
-        if (search == null) {
+        if (search == null)
             query = "SELECT * FROM " + tablename + " ORDER BY " + PKEY + " DESC";
-        } else {
+        else
             query = "SELECT * FROM " +  tablename +
                             " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'";
-        }
+
         Log.d("PatientDB", query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
@@ -229,6 +241,7 @@ public class PatientDB extends SQLiteOpenHelper{
         String query, src_table;
         TreatmentDB treatDB = new TreatmentDB(mContext);
 
+
         for (Patient pat: patList) {
             copy_count += AddPatientToDB(pat, dstnm);
 
@@ -238,15 +251,7 @@ public class PatientDB extends SQLiteOpenHelper{
                 src_table = srcnm + "." + pat.Uid;
 
             if (isTableExists(db, src_table)) {
-                // Create table if not exist
-                query = treatDB.getCreateTableStr(dstnm, pat.Uid);
-                Log.d("PatientDB", query);
-                db.execSQL(query);
-
-                // Add records
-                query = "INSERT INTO " + dstnm + "." + pat.Uid + " SELECT * FROM " + src_table;
-                Log.d("PatientDB", query);
-                db.execSQL(query);
+                treatDB.mergeTreatments(db, pat, srcnm, dstnm);
             }
         }
 

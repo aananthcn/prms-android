@@ -39,36 +39,34 @@ public class TreatmentDB extends SQLiteOpenHelper{
         //onCreate(db);
     }
 
-    public void createDatabaseifNotExist(SQLiteDatabase db, String tablename) {
-        String query = this.getCreateTableStr(null, tablename);
-        Log.d("TreatmentDB", query);
-        db.execSQL(query);
-    }
-
-    // Treatment table creation sql statement
-    public String getCreateTableStr(String dbname, String table) {
-        String query, tablename;
-
-        if (dbname == null) {
-            tablename = table;
-        } else {
-            tablename = dbname + "." + table; // here dbname is the logical name!!
-        }
+    public void createTreatmentTableIfNotExist(SQLiteDatabase db, String tablename) {
+        String query;
 
         query = "CREATE TABLE IF NOT EXISTS " + tablename +
-            " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
-            "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
+                " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
+                "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
 
-        return query;
+        Log.d("TreatmentDB", query);
+        db.execSQL(query);
     }
 
     public void AddTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        createDatabaseifNotExist(db, treat.patient.Uid);
-        String tablename = treat.patient.Uid;
+        AddTreatmentToDB(db, treat, null);
+    }
 
-        String query = "INSERT INTO '" + tablename + "' (date, complaint, prescription, doctor) VALUES ('"+
+    public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat, String dbname) {
+        String tablename;
+
+        if (dbname == null)
+            tablename = treat.patient.Uid;
+        else
+            tablename = dbname + "." + treat.patient.Uid; // here dbname is the logical name!!
+
+        createTreatmentTableIfNotExist(db, tablename);
+
+        String query = "INSERT INTO " + tablename + " (date, complaint, prescription, doctor) VALUES ('"+
                 treat.date + "', '" + treat.complaint +"', '" + treat.prescription +"', '" +
                 treat.doctor + "')";
 
@@ -80,7 +78,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
         String tablename = treat.patient.Uid;
 
-        String query = "UPDATE '" + tablename + "' SET date = '" + treat.date +
+        String query = "UPDATE " + tablename + " SET date = '" + treat.date +
                 "', complaint = '" + treat.complaint + "', prescription = '" + treat.prescription +
                 "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
@@ -92,22 +90,32 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
         String tablename = treat.patient.Uid;
 
-        String query = "DELETE FROM '" + tablename + "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
+        String query = "DELETE FROM " + tablename + " WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
     }
 
     public List<Treatment> GetTreatmentList(Patient pat) {
-        List<Treatment> treatmentList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
+
+        return GetTreatmentListFromDB(db, pat, null);
+    }
+
+    public List<Treatment> GetTreatmentListFromDB(SQLiteDatabase db, Patient pat, String dbname) {
+        List<Treatment> treatmentList = new ArrayList<>();
         String tid, date, complaint, prescription, doctor, query;
         Cursor res;
         Treatment treat;
-        String tablename = pat.Uid;
+        String tablename;
 
-        createDatabaseifNotExist(db, tablename);
-        query = "SELECT * FROM '" + tablename + "' ORDER BY " + TREAT_ID + " DESC";
+        Log.d("TreatmentDB", "GetTreatmentListFromdDB(): dbname = " + dbname);
+        if (dbname == null)
+            tablename = pat.Uid;
+        else
+            tablename = dbname + "." + pat.Uid; // here dbname is the logical name!!
+
+        query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + " DESC";
         Log.d("TreatmentDB", query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
@@ -139,5 +147,36 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
         res.close();
         return treatmentList;
+    }
+
+    private boolean isTreatmentExist(Treatment inTrt, List<Treatment> trtList) {
+        for (Treatment trt : trtList) {
+            Log.d("TreatmentDB", trt.date+"=="+inTrt.date+" && "+ trt.complaint+"=="+inTrt.complaint);
+            if ( trt.date.equals(inTrt.date) && trt.complaint.equals(inTrt.complaint) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void mergeTreatments(SQLiteDatabase db, Patient pat, String srcdbn, String dstdbn) {
+        List<Treatment> srcList; // Treatment list from source database
+        List<Treatment> dstList; // Treatment list from destination database
+
+        Log.d("TreatmentDB", "Entering mergeTreatments()");
+        srcList = GetTreatmentListFromDB(db, pat, srcdbn);
+        dstList = GetTreatmentListFromDB(db, pat, dstdbn);
+
+        // Check for redundancy and add imported records to destination database
+        int count = 0;
+        for (Treatment trt : srcList) {
+            if (!isTreatmentExist(trt, dstList)) {
+                AddTreatmentToDB(db, trt, dstdbn);
+                dstList.add(trt);
+                count++;
+                break;
+            }
+        }
+        Log.d("TreatmentDB", "Added "+count+" treatments to " + dstdbn);
     }
 }
