@@ -40,12 +40,26 @@ public class TreatmentDB extends SQLiteOpenHelper{
     }
 
     public void createDatabaseifNotExist(SQLiteDatabase db, String tablename) {
-        String query = "CREATE TABLE IF NOT EXISTS '" + tablename +
-            "' ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
-            "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
-
+        String query = this.getCreateTableStr(null, tablename);
         Log.d("TreatmentDB", query);
         db.execSQL(query);
+    }
+
+    // Treatment table creation sql statement
+    public String getCreateTableStr(String dbname, String table) {
+        String query, tablename;
+
+        if (dbname == null) {
+            tablename = table;
+        } else {
+            tablename = dbname + "." + table; // here dbname is the logical name!!
+        }
+
+        query = "CREATE TABLE IF NOT EXISTS " + tablename +
+            " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
+            "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
+
+        return query;
     }
 
     public void AddTreatment(Treatment treat) {

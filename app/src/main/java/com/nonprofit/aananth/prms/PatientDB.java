@@ -24,8 +24,11 @@ public class PatientDB extends SQLiteOpenHelper{
     public static final String MAIN_DATABASE = "PRMS.db";
     public static final int DATABASE_VERSION = 4;
 
+    private Context mContext;
+
     public PatientDB(Context context) {
         super(context, MAIN_DATABASE, null, DATABASE_VERSION);
+        mContext = context;
     }
 
     @Override
@@ -57,7 +60,7 @@ public class PatientDB extends SQLiteOpenHelper{
         onCreate(db);
     }
 
-    // Database creation sql statement
+    // Patient table creation sql statement
     private String getCreateTableStr(String dbname, String table) {
         String query, tablename;
 
@@ -87,7 +90,7 @@ public class PatientDB extends SQLiteOpenHelper{
         if (dbname == null) {
             // new patient added from UI
             tablename = PATIENT_LIST;
-            uid = (pat.Name+ new Date()).replaceAll("\\s+","");
+            uid = (pat.Name+"_"+ new Date()).replaceAll("[^a-zA-Z0-9]+","_");;
         } else {
             // patient from other db is copied to new db
             tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
@@ -200,11 +203,51 @@ public class PatientDB extends SQLiteOpenHelper{
         return patientList;
     }
 
-    private int CopyPatListToDB(List<Patient> patList, String dbname) {
+    private boolean isTableExists(SQLiteDatabase db, String tableName)
+    {
+        if (tableName == null || db == null) {
+            return false;
+        }
+
+        String query = "SELECT * FROM " + tableName;
+        Log.d("PatientDB", query);
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (!cursor.moveToFirst()) {
+            cursor.close();
+            return false;
+        }
+        int count = cursor.getInt(0);
+        cursor.close();
+        Log.d("PatientDB", "isTableExists() query returned "+ count + " results!");
+
+        return count > 0;
+    }
+
+    private int CopyPatListToDB(List<Patient> patList, SQLiteDatabase db, String srcnm, String dstnm) {
         int copy_count = 0;
+        String query, src_table;
+        TreatmentDB treatDB = new TreatmentDB(mContext);
 
         for (Patient pat: patList) {
-            copy_count += AddPatientToDB(pat, dbname);
+            copy_count += AddPatientToDB(pat, dstnm);
+
+            if (srcnm == null)
+                src_table = pat.Uid;
+            else
+                src_table = srcnm + "." + pat.Uid;
+
+            if (isTableExists(db, src_table)) {
+                // Create table if not exist
+                query = treatDB.getCreateTableStr(dstnm, pat.Uid);
+                Log.d("PatientDB", query);
+                db.execSQL(query);
+
+                // Add records
+                query = "INSERT INTO " + dstnm + "." + pat.Uid + " SELECT * FROM " + src_table;
+                Log.d("PatientDB", query);
+                db.execSQL(query);
+            }
         }
 
         return copy_count;
@@ -246,9 +289,9 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // Copy records to new database
         mainPatList = GetPatientListFromDB(null, null); // main database
-        copied_records += CopyPatListToDB(mainPatList, NEWDB_LN);
+        copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
         impoPatList = GetPatientListFromDB(null, IMPDB_LN); // to be imported database
-        copied_records += CopyPatListToDB(impoPatList, NEWDB_LN);
+        copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
 

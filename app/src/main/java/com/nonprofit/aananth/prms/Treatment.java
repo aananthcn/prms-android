@@ -23,8 +23,8 @@ public class Treatment {
 
         patient = pat;
         tid = id;
-        complaint = comp;
-        prescription = pres;
+        complaint = comp.replace("'","");
+        prescription = pres.replace("'","");
         doctor = doc;
     }
 }
