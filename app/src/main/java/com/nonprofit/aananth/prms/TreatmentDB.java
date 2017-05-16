@@ -171,6 +171,8 @@ public class TreatmentDB extends SQLiteOpenHelper{
         int count = 0;
         for (Treatment trt : srcList) {
             if (!isTreatmentExist(trt, dstList)) {
+                if (trt.patient.Name.equals("Empty"))
+                    continue;
                 AddTreatmentToDB(db, trt, dstdbn);
                 dstList.add(trt);
                 count++;

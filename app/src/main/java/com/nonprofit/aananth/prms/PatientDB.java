@@ -171,6 +171,8 @@ public class PatientDB extends SQLiteOpenHelper{
         Patient pat;
         Cursor res;
 
+        onCreate(db); //// TODO: 15/05/17 Fix this bug!! Following is executed before table is created!!
+
         if (dbname == null)
             tablename = PATIENT_LIST;
         else
@@ -243,6 +245,8 @@ public class PatientDB extends SQLiteOpenHelper{
 
 
         for (Patient pat: patList) {
+            if (pat.Name.equals("Empty"))
+                continue;
             copy_count += AddPatientToDB(pat, dstnm);
 
             if (srcnm == null)

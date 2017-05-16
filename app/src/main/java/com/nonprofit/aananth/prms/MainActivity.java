@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         patientDB = new PatientDB(this);
         treatmentDB = new TreatmentDB(this);
         doctorDB = new DoctorDB(this);
+        mDoctor = new Doctor("Dr. Jegadish", "0", "");
         mMode = Mode.LOGIN;
 
         setupDoctorLoginSpinner();
@@ -312,9 +313,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             public void onClick(View view, final int position) {
                 // show patient history view
                 mCurrPatient = patlist.get(position);
-                treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
-                renderTreatRecycleView(treatmentList);
-                mMode = Mode.VIEW_TREAT;
+                if (!mCurrPatient.Name.equals("Empty")) {
+                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+                    renderTreatRecycleView(treatmentList);
+                    mMode = Mode.VIEW_TREAT;
+                }
             }
 
             @Override
