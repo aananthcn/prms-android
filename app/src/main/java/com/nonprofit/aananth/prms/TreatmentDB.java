@@ -78,9 +78,11 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
         String tablename = treat.patient.Uid;
 
-        String query = "UPDATE " + tablename + " SET date = '" + treat.date +
-                "', complaint = '" + treat.complaint + "', prescription = '" + treat.prescription +
-                "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
+        //String query = "UPDATE " + tablename + " SET date = '" + treat.date +
+        //        "', complaint = '" + treat.complaint + "', prescription = '" + treat.prescription +
+        //        "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
+        String query = "UPDATE " + tablename + " SET complaint = '" + treat.complaint + "', prescription = '"
+                + treat.prescription + "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
@@ -140,6 +142,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
             Log.d("TreatmentDB", "Date = "+ date + ", Complaint = " + complaint +
                     ", Prescription = " + prescription);
             treat = new Treatment(pat, tid, complaint, prescription, doctor);
+            treat.date = date;
             treatmentList.add(treat);
 
             res.moveToNext();
