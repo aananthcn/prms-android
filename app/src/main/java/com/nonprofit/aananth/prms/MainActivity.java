@@ -314,7 +314,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 // show patient history view
                 mCurrPatient = patlist.get(position);
                 if (!mCurrPatient.Name.equals("Empty")) {
-                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
                     renderTreatRecycleView(treatmentList);
                     mMode = Mode.VIEW_TREAT;
                 }
@@ -393,7 +393,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onBackPressed() {
         if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
             mMode = Mode.VIEW_TREAT;
-            treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+            treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
             renderTreatRecycleView(treatmentList);
         }
         else {
@@ -432,7 +432,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
         }
 
-        treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+        treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
         renderTreatRecycleView(treatmentList);
         mMode = Mode.VIEW_TREAT;
     }
@@ -466,7 +466,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     // User clicked ok button
                     treatmentDB.DeleteTreatment(mCurrTreatment);
                     mMode = Mode.VIEW_TREAT;
-                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient);
+                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
                     renderTreatRecycleView(treatmentList);
                 }
             });

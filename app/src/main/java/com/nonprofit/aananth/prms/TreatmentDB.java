@@ -98,15 +98,15 @@ public class TreatmentDB extends SQLiteOpenHelper{
         db.execSQL(query);
     }
 
-    public List<Treatment> GetTreatmentList(Patient pat) {
+    public List<Treatment> GetTreatmentList(Patient pat, ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        return GetTreatmentListFromDB(db, pat, null);
+        return GetTreatmentListFromDB(db, pat, null, order);
     }
 
-    public List<Treatment> GetTreatmentListFromDB(SQLiteDatabase db, Patient pat, String dbname) {
+    public List<Treatment> GetTreatmentListFromDB(SQLiteDatabase db, Patient pat, String dbname, ListOrder order) {
         List<Treatment> treatmentList = new ArrayList<>();
-        String tid, date, complaint, prescription, doctor, query;
+        String tid, date, complaint, prescription, doctor, query, desc;
         Cursor res;
         Treatment treat;
         String tablename;
@@ -117,7 +117,12 @@ public class TreatmentDB extends SQLiteOpenHelper{
         else
             tablename = dbname + "." + pat.Uid; // here dbname is the logical name!!
 
-        query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + " DESC";
+        if (order == ListOrder.REVERSE)
+            desc = " DESC";
+        else
+            desc = "";
+
+        query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + desc;
         Log.d("TreatmentDB", query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
@@ -167,8 +172,8 @@ public class TreatmentDB extends SQLiteOpenHelper{
         List<Treatment> dstList; // Treatment list from destination database
 
         Log.d("TreatmentDB", "Entering mergeTreatments()");
-        srcList = GetTreatmentListFromDB(db, pat, srcdbn);
-        dstList = GetTreatmentListFromDB(db, pat, dstdbn);
+        srcList = GetTreatmentListFromDB(db, pat, srcdbn, ListOrder.ASCENDING);
+        dstList = GetTreatmentListFromDB(db, pat, dstdbn, ListOrder.ASCENDING);
 
         // Check for redundancy and add imported records to destination database
         int count = 0;
