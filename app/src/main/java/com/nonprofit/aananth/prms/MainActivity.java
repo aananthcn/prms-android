@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         setContentView(currLayout);
         mMode = Mode.NORMAL;
 
-        patientList = patientDB.GetPatientList(null);
+        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
 
         MenuInflater inflater = getMenuInflater();
@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         Log.d("Main Activity", "Search patient records");
         srchstr = srchtxt.getText().toString();
-        patientList = patientDB.GetPatientList(srchstr);
+        patientList = patientDB.GetPatientList(srchstr, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
 
         Button srchbtn = (Button) findViewById(R.id.search_btn);
@@ -247,13 +247,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             patientDB.UpdatePatient(pat);
             Log.d("Main Activity", " Updated patient '" + pat.Name + "'");
         }
-        patientList = patientDB.GetPatientList(null);
+        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
 
     public void CancelPatientRecordEdit(View view) {
-        patientList = patientDB.GetPatientList(null);
+        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
         mMode = Mode.NORMAL;
     }
@@ -265,14 +265,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     public void onClick(DialogInterface dialog, int id) {
                         // User clicked ok button
                         patientDB.DeletePatient(mCurrPatient);
-                        patientList = patientDB.GetPatientList(null);
+                        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
                         renderPatRecycleView(patientList);
                     }
                 });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // User cancelled the dialog
-                        patientList = patientDB.GetPatientList(null);
+                        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
                         renderPatRecycleView(patientList);
                     }
                 });
@@ -397,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             renderTreatRecycleView(treatmentList);
         }
         else {
-            patientList = patientDB.GetPatientList(null);
+            patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
             renderPatRecycleView(patientList);
             mMode = Mode.NORMAL;
         }
@@ -728,7 +728,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             currLayout = R.layout.patients;
             setContentView(currLayout);
 
-            patientList = patientDB.GetPatientList(null);
+            patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
             renderPatRecycleView(patientList);
             mMode = Mode.NORMAL;
         }

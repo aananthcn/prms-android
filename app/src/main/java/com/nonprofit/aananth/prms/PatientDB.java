@@ -14,10 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Created by aananth on 04/04/17.
- */
-
 public class PatientDB extends SQLiteOpenHelper{
     public static final String PATIENT_LIST = "patientlist";
     public static final String PKEY = "_id";
@@ -46,7 +42,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // TODO: In future we should add saving/exporting old tables before delete
         String query;
-        List<Patient> patientList = GetPatientList(null);
+        List<Patient> patientList = GetPatientList(null, ListOrder.ASCENDING);
 
         // Delete all treatment history of all patients
         for (Patient pat: patientList) {
@@ -159,14 +155,14 @@ public class PatientDB extends SQLiteOpenHelper{
         db.execSQL(query);
     }
 
-    public List<Patient> GetPatientList(String search) {
-        return GetPatientListFromDB(search, null);
+    public List<Patient> GetPatientList(String search, ListOrder order) {
+        return GetPatientListFromDB(search, null, order);
     }
 
-    private List<Patient> GetPatientListFromDB(String search, String dbname) {
+    private List<Patient> GetPatientListFromDB(String search, String dbname, ListOrder order) {
         List<Patient> patientList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
-        String name, phone, email, pid, gender, uid;
+        String name, phone, email, pid, gender, uid, desc;
         String query, tablename;
         Patient pat;
         Cursor res;
@@ -178,11 +174,17 @@ public class PatientDB extends SQLiteOpenHelper{
         else
             tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
 
+        if (order == ListOrder.REVERSE)
+            desc = " DESC";
+        else
+            desc = "";
+
         if (search == null)
-            query = "SELECT * FROM " + tablename + " ORDER BY " + PKEY + " DESC";
+            query = "SELECT * FROM " + tablename + " ORDER BY " + PKEY + desc;
         else
             query = "SELECT * FROM " +  tablename +
-                            " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'";
+                            " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'" +
+                    " ORDER BY " + PKEY + desc;
 
         Log.d("PatientDB", query);
         res = db.rawQuery(query, null);
@@ -297,9 +299,9 @@ public class PatientDB extends SQLiteOpenHelper{
 
 
         // Copy records to new database
-        mainPatList = GetPatientListFromDB(null, null); // main database
+        mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING); // main database
         copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
-        impoPatList = GetPatientListFromDB(null, IMPDB_LN); // to be imported database
+        impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING); // to be imported database
         copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
