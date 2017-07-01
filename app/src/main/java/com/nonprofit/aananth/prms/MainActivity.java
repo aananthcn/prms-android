@@ -410,6 +410,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String title = "New treatment for " + mCurrPatient.Name;
         setTitle(title);
         mMode = Mode.ADD_TREAT;
+
+        // Add date according to the format defined in Treatment class
+        Treatment treat = new Treatment(null, null, null, null, null);
+        EditText date = (EditText) findViewById(R.id.treat_date);
+        date.setText(treat.date);
     }
 
     public void SaveTreatmentRecord(View view) {
