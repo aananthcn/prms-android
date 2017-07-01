@@ -413,10 +413,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     public void SaveTreatmentRecord(View view) {
-        EditText comp, pres;
+        EditText comp, pres, date;
 
         comp = (EditText)findViewById(R.id.complaint);
         pres = (EditText)findViewById(R.id.prescription);
+        date = (EditText)findViewById(R.id.treat_date);
 
         if (mMode == Mode.ADD_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
@@ -427,7 +428,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         else if (mMode == Mode.UPDATE_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
                     comp.getText().toString(), pres.getText().toString(), mDoctor.name);
-            treat.date = mCurrTreatment.date; //retain old date
+            treat.date = date.getText().toString();
             treatmentDB.UpdateTreatment(treat);
             Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
         }
@@ -449,6 +450,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         compl.setText(mCurrTreatment.complaint);
         EditText pres = (EditText) findViewById(R.id.prescription);
         pres.setText(mCurrTreatment.prescription);
+        EditText date = (EditText) findViewById(R.id.treat_date);
+        date.setText(mCurrTreatment.date);
 
         Button  savupd = (Button) findViewById(R.id.treat_sav_upd);
         savupd.setText("Update");

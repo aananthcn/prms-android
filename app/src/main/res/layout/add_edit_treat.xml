@@ -7,12 +7,12 @@
     android:layout_height="match_parent">
 
     <EditText
-        android:id="@+id/complaint"
-        android:layout_width="367dp"
-        android:layout_height="106dp"
+        android:id="@+id/treat_date"
+        android:layout_width="364dp"
+        android:layout_height="40dp"
         android:layout_marginTop="8dp"
         android:ems="10"
-        android:hint="Enter complaints from patient"
+        android:hint="Edit date"
         android:gravity="top"
         android:inputType="textMultiLine"
         app:layout_constraintHorizontal_bias="0.529"
@@ -21,9 +21,23 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <EditText
+        android:id="@+id/complaint"
+        android:layout_width="367dp"
+        android:layout_height="112dp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:hint="Enter complaints from patient"
+        android:gravity="top"
+        android:inputType="textMultiLine"
+        app:layout_constraintHorizontal_bias="0.529"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/treat_date"/>
+
+    <EditText
         android:id="@+id/prescription"
-        android:layout_width="362dp"
-        android:layout_height="102dp"
+        android:layout_width="357dp"
+        android:layout_height="173dp"
         android:layout_marginTop="8dp"
         android:ems="10"
         android:gravity="top"
