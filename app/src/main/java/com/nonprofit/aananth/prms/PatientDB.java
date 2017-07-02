@@ -21,11 +21,14 @@ public class PatientDB extends SQLiteOpenHelper{
     public static final int DATABASE_VERSION = 4;
 
     private Context mContext;
+    private boolean mDbChanged = false;
+
 
     public PatientDB(Context context) {
         super(context, MAIN_DATABASE, null, DATABASE_VERSION);
         mContext = context;
     }
+
 
     @Override
     public void onCreate(SQLiteDatabase database) {
@@ -33,6 +36,7 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         database.execSQL(query);
     }
+
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -54,7 +58,9 @@ public class PatientDB extends SQLiteOpenHelper{
         query = "DROP TABLE IF EXISTS " + PATIENT_LIST;
         db.execSQL(query);
         onCreate(db);
+        mDbChanged = true;
     }
+
 
     // Patient table creation sql statement
     private String getCreateTableStr(String dbname, String table) {
@@ -73,10 +79,12 @@ public class PatientDB extends SQLiteOpenHelper{
         return query;
     }
 
+
     // return 1 on success, 0 on failure
     public int AddPatient(Patient pat) {
         return AddPatientToDB(pat, null);
     }
+
 
     private int AddPatientToDB(Patient pat, String dbname) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -100,6 +108,7 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         try {
             db.execSQL(query);
+            mDbChanged = true;
         }
         catch (SQLException mSQLException) {
             if(mSQLException instanceof SQLiteConstraintException){
@@ -130,6 +139,7 @@ public class PatientDB extends SQLiteOpenHelper{
         return retval;
     }
 
+
     public void UpdatePatient(Patient pat) {
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "UPDATE " + PATIENT_LIST + " SET name = '" + pat.Name + "', phone = '" + pat.Phone +
@@ -138,7 +148,9 @@ public class PatientDB extends SQLiteOpenHelper{
 
         Log.d("PatientDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
+
 
     public void DeletePatient(Patient pat) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -153,11 +165,14 @@ public class PatientDB extends SQLiteOpenHelper{
         query = "DELETE FROM " + PATIENT_LIST + " WHERE " + PKEY + " = '" + pat.Pid + "';";
         Log.d("PatientDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
+
 
     public List<Patient> GetPatientList(String search, ListOrder order) {
         return GetPatientListFromDB(search, null, order);
     }
+
 
     private List<Patient> GetPatientListFromDB(String search, String dbname, ListOrder order) {
         List<Patient> patientList = new ArrayList<>();
@@ -218,6 +233,7 @@ public class PatientDB extends SQLiteOpenHelper{
         res.close();
         return patientList;
     }
+
 
     private boolean isTableExists(SQLiteDatabase db, String tableName)
     {
@@ -303,7 +319,6 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
 
-
         // Copy patient records to new database
         mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING); // main database
         copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
@@ -328,7 +343,17 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
 
-
         return exportdbpath;
+    }
+
+
+    public boolean isDbChanged() {
+        Log.d("PatientDB", "mDbChanged = " + mDbChanged);
+        return mDbChanged;
+    }
+
+
+    public void DbSaved() {
+        mDbChanged = false;
     }
 }

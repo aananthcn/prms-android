@@ -20,6 +20,8 @@ public class DoctorDB extends SQLiteOpenHelper{
     public static final String DOCT_ID = "did";
     public static final String DOCT_TABLE = "doclist";
 
+    private boolean mDbChanged = false;
+
     // Database creation sql statement
     public DoctorDB(Context context) {
         super(context, MAIN_DATABASE, null, DATABASE_VERSION);
@@ -71,6 +73,7 @@ public class DoctorDB extends SQLiteOpenHelper{
 
         Log.d("DoctorDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
 
     public void UpdateDoctor(Doctor doc) {
@@ -83,6 +86,7 @@ public class DoctorDB extends SQLiteOpenHelper{
 
         Log.d("DoctorDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
 
     public void DeleteDoctor(Doctor doc) {
@@ -93,6 +97,7 @@ public class DoctorDB extends SQLiteOpenHelper{
 
         Log.d("DoctorDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
 
     public List<Doctor> GetDoctorList(ListOrder order) {
@@ -186,5 +191,16 @@ public class DoctorDB extends SQLiteOpenHelper{
             }
         }
         Log.d("DoctorDB", "Added "+count+" treatments to " + dstdbn);
+    }
+
+
+    public boolean isDbChanged() {
+        Log.d("DoctorDB", "mDbChanged = " + mDbChanged);
+        return mDbChanged;
+    }
+
+
+    public void DbSaved() {
+        mDbChanged = false;
     }
 }

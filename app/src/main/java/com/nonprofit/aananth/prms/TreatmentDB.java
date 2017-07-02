@@ -19,16 +19,20 @@ import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 public class TreatmentDB extends SQLiteOpenHelper{
     public static final String TREAT_ID = "tid";
+    private boolean mDbChanged = false;
+
 
     // Database creation sql statement
     public TreatmentDB(Context context) {
         super(context, MAIN_DATABASE, null, DATABASE_VERSION);
     }
 
+
     @Override
     public void onCreate(SQLiteDatabase database) {
         //database.execSQL(DATABASE_CREATE);
     }
+
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -38,6 +42,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         //db.execSQL("DROP TABLE IF EXISTS " + PATIENT_LIST);
         //onCreate(db);
     }
+
 
     public void createTreatmentTableIfNotExist(SQLiteDatabase db, String tablename) {
         String query;
@@ -50,11 +55,13 @@ public class TreatmentDB extends SQLiteOpenHelper{
         db.execSQL(query);
     }
 
+
     public void AddTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         AddTreatmentToDB(db, treat, null);
     }
+
 
     public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat, String dbname) {
         String tablename;
@@ -72,7 +79,9 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
+
 
     public void UpdateTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -84,7 +93,9 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
+
 
     public void DeleteTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -94,13 +105,16 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
         Log.d("TreatmentDB", query);
         db.execSQL(query);
+        mDbChanged = true;
     }
+
 
     public List<Treatment> GetTreatmentList(Patient pat, ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         return GetTreatmentListFromDB(db, pat, null, order);
     }
+
 
     public List<Treatment> GetTreatmentListFromDB(SQLiteDatabase db, Patient pat, String dbname, ListOrder order) {
         List<Treatment> treatmentList = new ArrayList<>();
@@ -155,6 +169,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         return treatmentList;
     }
 
+
     private boolean isTreatmentExist(Treatment inTrt, List<Treatment> trtList) {
         for (Treatment trt : trtList) {
             Log.d("TreatmentDB", trt.date+"=="+inTrt.date+" && "+ trt.complaint+"=="+inTrt.complaint);
@@ -164,6 +179,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         }
         return false;
     }
+
 
     public void mergeTreatments(SQLiteDatabase db, Patient pat, String srcdbn, String dstdbn) {
         List<Treatment> srcList; // Treatment list from source database
@@ -185,5 +201,16 @@ public class TreatmentDB extends SQLiteOpenHelper{
             }
         }
         Log.d("TreatmentDB", "Added "+count+" treatments to " + dstdbn);
+    }
+
+
+    public boolean isDbChanged() {
+        Log.d("TreatmentDB", "mDbChanged = " + mDbChanged);
+        return mDbChanged;
+    }
+
+
+    public void DbSaved() {
+        mDbChanged = false;
     }
 }

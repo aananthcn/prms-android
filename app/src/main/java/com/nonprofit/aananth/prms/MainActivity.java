@@ -636,9 +636,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onPause() {
         super.onPause();
 
-        String outpath = createBackupFile("prms-backup.db");
-        Log.d("Main Activity", "onPause: creating " + outpath);
-        this.exportDB(outpath);
+        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
+            String outpath = createBackupFile("prms-backup.db");
+            Log.d("Main Activity", "onPause: creating " + outpath);
+
+            // backup databases and notify the event to all DB interface classes
+            this.exportDB(outpath);
+            patientDB.DbSaved();
+            treatmentDB.DbSaved();
+            doctorDB.DbSaved();
+        }
     }
 
 
