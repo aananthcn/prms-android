@@ -34,7 +34,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.String;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -609,6 +612,36 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return false;
     }
 
+    private String createBackupFile(String filename) {
+        String storagepath = Environment.getExternalStorageDirectory().toString();
+        String outpath = storagepath + "/Download/" + filename;
+
+        File file = new File(outpath);
+        try {
+            file.createNewFile();
+            if (file.exists()) {
+                OutputStream fo = new FileOutputStream(file);
+                byte data[] = {'d', 'u', 'm', 'm', 'y'};
+                fo.write(data);
+                fo.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return outpath;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        String outpath = createBackupFile("prms-backup.db");
+        Log.d("Main Activity", "onPause: creating " + outpath);
+        this.exportDB(outpath);
+    }
+
+
     // This function copies the MAIN_DATABASE used by this app to external storage path
     private void exportDB(String outpath) {
         try {
@@ -620,7 +653,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         + "/databases/" + MAIN_DATABASE;
                 File in_file = new File(data, appDBpath);
                 File out_file = new File(sd, outpath);
-                out_file.delete();
+                if (!out_file.exists()) {
+                    out_file = new File(outpath);
+                }
+                if (out_file.exists()) {
+                    out_file.delete();
+                }
 
                 FileChannel src = new FileInputStream(in_file).getChannel();
                 FileChannel dst = new FileOutputStream(out_file).getChannel();
@@ -630,7 +668,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 dst.close();
                 Toast.makeText(getBaseContext(), out_file.toString(),
                         Toast.LENGTH_LONG).show();
-
             }
             else {
                 Log.d("Main Activity", "exportDB(): Can't write into external storage!");

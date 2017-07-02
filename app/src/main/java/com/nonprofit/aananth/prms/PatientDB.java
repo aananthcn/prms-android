@@ -281,11 +281,7 @@ public class PatientDB extends SQLiteOpenHelper{
         String NEWDB_LN = "newdb";
         String query;
         int total_records, copied_records = 0;
-
-        //List<Patient> mainPatList = new ArrayList<>();
-        //List<Patient> impoPatList = new ArrayList<>();
         List<Patient> mainPatList, impoPatList;
-        List<Doctor> mainDctList, impoDctList;
 
         query = "PRAGMA foreign_keys = on";
         Log.d("PatientDB", query);
