@@ -240,22 +240,29 @@ public class PatientDB extends SQLiteOpenHelper{
         return count > 0;
     }
 
+
+    // This function copies all patient data from first argument to destination database (4th arg)
+    // This function also merges treatments by checking for duplicate entries
     private int CopyPatListToDB(List<Patient> patList, SQLiteDatabase db, String srcnm, String dstnm) {
         int copy_count = 0;
-        String query, src_table;
+        String src_table;
         TreatmentDB treatDB = new TreatmentDB(mContext);
 
-
+        // Merge treatments for every patients
         for (Patient pat: patList) {
             if (pat.Name.equals("Empty"))
                 continue;
+
+            // Copy patient details
             copy_count += AddPatientToDB(pat, dstnm);
 
+            // Find the name of treatment table for this patient
             if (srcnm == null)
                 src_table = pat.Uid;
             else
                 src_table = srcnm + "." + pat.Uid;
 
+            // Copy treatments if the treatment table is valid
             if (isTableExists(db, src_table)) {
                 treatDB.mergeTreatments(db, pat, srcnm, dstnm);
             }
@@ -263,6 +270,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
         return copy_count;
     }
+
 
     public String mergeDB(String inpath) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -274,8 +282,10 @@ public class PatientDB extends SQLiteOpenHelper{
         String query;
         int total_records, copied_records = 0;
 
-        List<Patient> mainPatList = new ArrayList<>();
-        List<Patient> impoPatList = new ArrayList<>();
+        //List<Patient> mainPatList = new ArrayList<>();
+        //List<Patient> impoPatList = new ArrayList<>();
+        List<Patient> mainPatList, impoPatList;
+        List<Doctor> mainDctList, impoDctList;
 
         query = "PRAGMA foreign_keys = on";
         Log.d("PatientDB", query);
@@ -298,7 +308,7 @@ public class PatientDB extends SQLiteOpenHelper{
         db.execSQL(query);
 
 
-        // Copy records to new database
+        // Copy patient records to new database
         mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING); // main database
         copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
         impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING); // to be imported database
@@ -306,6 +316,10 @@ public class PatientDB extends SQLiteOpenHelper{
         total_records = mainPatList.size() + impoPatList.size();
         Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
 
+        // Copy doctor records to new database
+        DoctorDB dctDB = new DoctorDB(mContext);
+        dctDB.mergeDoctors(db, null, NEWDB_LN);
+        dctDB.mergeDoctors(db, IMPDB_LN, NEWDB_LN);
 
         // Commit and detach
         query = "COMMIT";

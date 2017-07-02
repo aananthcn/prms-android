@@ -95,15 +95,15 @@ public class DoctorDB extends SQLiteOpenHelper{
         db.execSQL(query);
     }
 
-    public List<Doctor> GetDoctorList() {
+    public List<Doctor> GetDoctorList(ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        return GetDoctorListFromDB(db, null);
+        return GetDoctorListFromDB(db, null, order);
     }
 
-    public List<Doctor> GetDoctorListFromDB(SQLiteDatabase db, String dbname) {
+    public List<Doctor> GetDoctorListFromDB(SQLiteDatabase db, String dbname, ListOrder order) {
         List<Doctor> docList = new ArrayList<>();
-        String query, name, email, phone;
+        String query, name, email, phone, desc;
         int id;
         Cursor res;
         Doctor doc;
@@ -117,8 +117,12 @@ public class DoctorDB extends SQLiteOpenHelper{
             tablename = dbname + "." + DOCT_TABLE; // here dbname is the logical name!!
 
         createDoctorTableIfNotExist(db, tablename);
+        if (order == ListOrder.REVERSE)
+            desc = " DESC";
+        else
+            desc = "";
 
-        query = "SELECT * FROM " + tablename + " ORDER BY " + DOCT_ID + " DESC";
+        query = "SELECT * FROM " + tablename + " ORDER BY " + DOCT_ID + desc;
         Log.d("DoctorDB", query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
@@ -150,4 +154,37 @@ public class DoctorDB extends SQLiteOpenHelper{
         return docList;
     }
 
+
+    private boolean isDoctorExist(Doctor inDct, List<Doctor> dctList) {
+        for (Doctor dct : dctList) {
+            Log.d("DoctorDB", dct.name+"=="+inDct.name+" && "+ dct.phone+"=="+inDct.phone);
+            if ( dct.name.equals(inDct.name) && dct.phone.equals(inDct.phone) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public void mergeDoctors(SQLiteDatabase db, String srcdbn, String dstdbn) {
+        List<Doctor> srcList; // Doctor list from source database
+        List<Doctor> dstList; // Doctor list from destination database
+
+        Log.d("DoctorDB", "Entering mergeDoctors()");
+        srcList = GetDoctorListFromDB(db, srcdbn, ListOrder.ASCENDING);
+        dstList = GetDoctorListFromDB(db, dstdbn, ListOrder.ASCENDING);
+
+        // Check for redundancy and add imported records to destination database
+        int count = 0;
+        for (Doctor dct : srcList) {
+            if (!isDoctorExist(dct, dstList)) {
+                if (dct.name.equals("Empty"))
+                    continue;
+                AddDoctorToDB(db, dct, dstdbn);
+                dstList.add(dct);
+                count++;
+            }
+        }
+        Log.d("DoctorDB", "Added "+count+" treatments to " + dstdbn);
+    }
 }

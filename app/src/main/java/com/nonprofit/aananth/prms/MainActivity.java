@@ -609,6 +609,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return false;
     }
 
+    // This function copies the MAIN_DATABASE used by this app to external storage path
     private void exportDB(String outpath) {
         try {
             File sd = Environment.getExternalStorageDirectory();
@@ -639,11 +640,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    // merge database
+    // This function merges databases
     public void importDB(String inpath) {
+        // merging starts from Patients so that their treatment and doctors are merged
         String merged_filepath = patientDB.mergeDB(inpath);
+
+        // closes databases so that the user will be forced to re-login to re-init databases
         treatmentDB.close();
         patientDB.close();
+        doctorDB.close();
+
         try {
             File sd = Environment.getExternalStorageDirectory();
             File data  = Environment.getDataDirectory();
@@ -691,7 +697,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // Set login options
         spinner = (Spinner)findViewById(R.id.doctor);
         List<String> loginList = new ArrayList<String>();
-        mDocList = doctorDB.GetDoctorList();
+        mDocList = doctorDB.GetDoctorList(ListOrder.ASCENDING);
         for (Doctor doc : mDocList) {
             loginList.add(doc.name);
         }
