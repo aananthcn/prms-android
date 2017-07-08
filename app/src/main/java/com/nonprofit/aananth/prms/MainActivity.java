@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -380,8 +381,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 mRecyclerView, new ClickListener() {
             @Override
             public void onClick(View view, final int position) {
-                Toast.makeText(MainActivity.this, treatlist.get(position).complaint,
-                        Toast.LENGTH_LONG).show();
+                // share treatment
+                mCurrTreatment = treatlist.get(position);
+                registerForContextMenu(view);
+                openContextMenu(view);
+                view.showContextMenu();
+                unregisterForContextMenu(view);
             }
 
             @Override
@@ -521,6 +526,46 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.share_menu, menu);
+        menu.setHeaderTitle("Share Treatment");
+    }
+
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        switch(item.getItemId()) {
+            case R.id.share_whatsapp:
+                Intent wtspIntent = new Intent(Intent.ACTION_SEND);
+                wtspIntent.setType("text/plain");
+                wtspIntent.setPackage("com.whatsapp");
+                wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Complaint*: "+ mCurrTreatment.complaint
+                        + "\n\n*Prescription*: " + mCurrTreatment.prescription);
+                try {
+                    this.startActivity(wtspIntent);
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(getBaseContext(), "WhatsApp have not been installed.",
+                            Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            case R.id.share_sms:
+                Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                smsIntent.setType("vnd.android-dir/mms-sms");
+                smsIntent.putExtra("address", mCurrTreatment.patient.Phone);
+                smsIntent.putExtra("sms_body", mCurrTreatment.prescription);
+                this.startActivity(smsIntent);
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
+
+    // D A T A B A S E   E X P O R T   /   I M P O R T   O P E R A T I O N S
     // invoked from menu to import or export database
     private void createFileOpenDialog(int action) {
         Intent intent = new Intent()
