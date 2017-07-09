@@ -544,8 +544,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 Intent wtspIntent = new Intent(Intent.ACTION_SEND);
                 wtspIntent.setType("text/plain");
                 wtspIntent.setPackage("com.whatsapp");
-                wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Complaint*: "+ mCurrTreatment.complaint
-                        + "\n\n*Prescription*: " + mCurrTreatment.prescription);
+                wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Date*: "+ mCurrTreatment.date
+                        + "\n\n*Complaint*: "+ mCurrTreatment.complaint
+                        + "\n\n*Prescription*: "+ mCurrTreatment.prescription);
                 try {
                     this.startActivity(wtspIntent);
                 } catch (android.content.ActivityNotFoundException ex) {
