@@ -10,6 +10,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -398,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }));
     }
 
-    public void onBackPressed() {
+    public void myOnBackPressed() {
         if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
             mMode = Mode.VIEW_TREAT;
             treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
@@ -496,7 +497,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             dialog.show();
         }
 
-        onBackPressed();
+        myOnBackPressed();
     }
 
     // M E N U   H A N D L I N G
@@ -840,6 +841,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
             renderPatRecycleView(patientList);
             mMode = Mode.NORMAL;
+        }
+    }
+
+    private Boolean exit = false;
+    @Override
+    public void onBackPressed() {
+        if (mMode != Mode.NORMAL) {
+            myOnBackPressed();
+        }
+        else {
+            if (exit) {
+                finish(); // finish activity
+            } else {
+                Toast.makeText(this, "Press Back again to Exit.",
+                        Toast.LENGTH_SHORT).show();
+                exit = true;
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        exit = false;
+                    }
+                }, 3 * 1000);
+            }
         }
     }
 }
