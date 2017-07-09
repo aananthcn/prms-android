@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mDoctor = mDocList.get(position);
 
         // Showing selected spinner item
-        Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
+        Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_SHORT).show();
     }
     public void onNothingSelected(AdapterView<?> arg0) {
         // TODO Auto-generated method stub
@@ -559,7 +559,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 smsIntent.setType("vnd.android-dir/mms-sms");
                 smsIntent.putExtra("address", mCurrTreatment.patient.Phone);
                 smsIntent.putExtra("sms_body", mCurrTreatment.prescription);
-                this.startActivity(smsIntent);
+                try {
+                    this.startActivity(smsIntent);
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(getBaseContext(), "Couldn't send SMS",
+                            Toast.LENGTH_SHORT).show();
+                }
                 return true;
             default:
                 return super.onContextItemSelected(item);
@@ -720,7 +725,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 src.close();
                 dst.close();
                 Toast.makeText(getBaseContext(), out_file.toString(),
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_SHORT).show();
             }
             else {
                 Log.d("Main Activity", "exportDB(): Can't write into external storage!");
@@ -759,7 +764,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 src.close();
                 dst.close();
                 Toast.makeText(getBaseContext(), in_file.toString(),
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_SHORT).show();
                 in_file.delete(); // delete temp file
             }
             else {
