@@ -812,6 +812,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void AddNewDoctor() {
         currLayout = R.layout.add_edit_doc;
         setContentView(currLayout);
+        Button del = (Button) findViewById(R.id.doc_del);
+        del.setVisibility(View.INVISIBLE);
     }
 
     public void SaveDocRecord(View view) {
