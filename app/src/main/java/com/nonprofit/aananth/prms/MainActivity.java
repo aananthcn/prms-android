@@ -275,6 +275,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         patmail = (EditText)findViewById(R.id.emailID);
         patgender = (RadioButton)findViewById(R.id.radioMale);
 
+        if (patname.getText().toString().length() == 0) {
+            myOnBackPressed();
+            return;
+        }
+
         if (patgender.isChecked())
             gender = "Male";
         else
@@ -428,6 +433,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         comp = (EditText)findViewById(R.id.complaint);
         pres = (EditText)findViewById(R.id.prescription);
         date = (EditText)findViewById(R.id.treat_date);
+
+        if (comp.getText().toString().length() == 0 && pres.getText().toString().length() == 0) {
+            myOnBackPressed();
+            return;
+        }
 
         if (mMode == Mode.ADD_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
