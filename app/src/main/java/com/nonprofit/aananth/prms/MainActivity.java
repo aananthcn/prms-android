@@ -684,23 +684,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return outpath;
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
-            String outpath = createBackupFile("prms-backup.db");
-            Log.d("Main Activity", "onPause: creating " + outpath);
-
-            // backup databases and notify the event to all DB interface classes
-            this.exportDB(outpath);
-            patientDB.DbSaved();
-            treatmentDB.DbSaved();
-            doctorDB.DbSaved();
-        }
-    }
-
-
     // This function copies the MAIN_DATABASE used by this app to external storage path
     private void exportDB(String outpath) {
         try {
@@ -846,10 +829,75 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    public void DeleteCurrDoc(View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure to delete this Doctor?");
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked ok button
+                doctorDB.DeleteDoctor(mDoctor);
+                DocRecordMgmtExit();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+                DocRecordMgmtExit();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        mMode = Mode.NORMAL;
+    }
+
+    public void DocRecordMgmtExit() {
+        if (mMode == Mode.LOGIN) {
+            currLayout = R.layout.login;
+            setContentView(currLayout);
+            setupDoctorLoginSpinner();
+        }
+        else if (mMode == Mode.VIEW_TREAT) {
+            treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
+            renderTreatRecycleView(treatmentList);
+        }
+        else {
+            patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+            renderPatRecycleView(patientList);
+        }
+    }
+
+    public void CancelDocRecordEdit(View view) {
+        DocRecordMgmtExit();
+    }
+
+
+
+    // G E N E R I C   E X I T   F U N C T I O N S
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
+            String outpath = createBackupFile("prms-backup.db");
+            Log.d("Main Activity", "onPause: creating " + outpath);
+
+            // backup databases and notify the event to all DB interface classes
+            this.exportDB(outpath);
+            patientDB.DbSaved();
+            treatmentDB.DbSaved();
+            doctorDB.DbSaved();
+        }
+    }
+
+
     private Boolean exit = false;
     @Override
     public void onBackPressed() {
-        if (mMode != Mode.NORMAL) {
+        if (mMode == Mode.LOGIN) {
+            finish();
+        }
+        else if (mMode != Mode.NORMAL) {
             myOnBackPressed();
         }
         else {
