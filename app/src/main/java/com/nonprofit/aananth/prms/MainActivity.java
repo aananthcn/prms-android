@@ -550,6 +550,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 wtspIntent.setType("text/plain");
                 wtspIntent.setPackage("com.whatsapp");
                 wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Date*: "+ mCurrTreatment.date
+                        + "\n\n*Patient:* "+ mCurrTreatment.patient.Name
                         + "\n\n*Complaint*: "+ mCurrTreatment.complaint
                         + "\n\n*Prescription*: "+ mCurrTreatment.prescription);
                 try {
