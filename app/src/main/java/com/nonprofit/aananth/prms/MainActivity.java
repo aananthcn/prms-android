@@ -36,20 +36,19 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.String;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener
+{
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -71,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     // Aananth added these member variables
     private int currLayout;
-    private List doctors = Arrays.asList("Jegadish", "Rama");
     private Doctor mDoctor;
     private DoctorDB doctorDB;
     private List<Doctor> mDocList;
@@ -89,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
+    private GoogleDrive mDrive;
 
 
     @Override
@@ -98,12 +97,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // Aananth added these lines
         PACKAGE_NAME = getApplicationContext().getPackageName();
+        mMode = Mode.LOGIN;
         currLayout = R.layout.login;
         patientDB = new PatientDB(this);
         treatmentDB = new TreatmentDB(this);
         doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
-        mMode = Mode.LOGIN;
+        mDrive = new GoogleDrive();
 
         setupDoctorLoginSpinner();
     }
@@ -126,20 +126,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
      * which is packaged with this application.
      */
     public native String stringFromJNI();
-
-    public void onLogin(View view) {
-        Log.d("Main Activity", "Successful login");
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        update_mode(Mode.VIEW_PAT);
-
-        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
-        renderPatRecycleView(patientList);
-
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, mMenu);
-        getDynamicFilePermission();
-    }
 
     public void getDynamicFilePermission() {
         // Here, thisActivity is the current activity
@@ -857,6 +843,22 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mMode = mode;
     }
 
+    public void onLogin(View view) {
+        // setup main view
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        renderPatientview();
+
+        // setup menu
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, mMenu);
+        getDynamicFilePermission();
+
+        // setup Google Drive
+        mDrive.connectToGoogleDrive(this);
+        Log.d("Main Activity", "Successful login");
+    }
+
     @Override
     public void onPause() {
         super.onPause();
@@ -864,6 +866,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
             String outpath = createBackupFile("prms-backup.db");
             Log.d("Main Activity", "onPause: creating " + outpath);
+            mDrive.saveToGoogleDrive();
 
             // backup databases and notify the event to all DB interface classes
             this.exportDB(outpath);
@@ -871,7 +874,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             treatmentDB.DbSaved();
             doctorDB.DbSaved();
         }
+
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mDrive.disconnectFromGoogleDrive();
+    }
+
 
     public void renderTreatmentView() {
         treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
@@ -940,4 +951,5 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
     }
+
 }
