@@ -60,6 +60,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
 
         AddTreatmentToDB(db, treat, null);
+        db.close();
     }
 
 
@@ -94,6 +95,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         Log.d("TreatmentDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
 
@@ -106,13 +108,16 @@ public class TreatmentDB extends SQLiteOpenHelper{
         Log.d("TreatmentDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
 
     public List<Treatment> GetTreatmentList(Patient pat, ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
+        List<Treatment> list = GetTreatmentListFromDB(db, pat, null, order);
 
-        return GetTreatmentListFromDB(db, pat, null, order);
+        db.close();
+        return list;
     }
 
 

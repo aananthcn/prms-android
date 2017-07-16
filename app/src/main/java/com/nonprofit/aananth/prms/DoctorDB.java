@@ -56,6 +56,7 @@ public class DoctorDB extends SQLiteOpenHelper{
         SQLiteDatabase db = this.getWritableDatabase();
 
         AddDoctorToDB(db, doc, null);
+        db.close();
     }
 
     public void AddDoctorToDB(SQLiteDatabase db, Doctor doc, String dbname) {
@@ -87,6 +88,7 @@ public class DoctorDB extends SQLiteOpenHelper{
         Log.d("DoctorDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
     public void DeleteDoctor(Doctor doc) {
@@ -98,12 +100,15 @@ public class DoctorDB extends SQLiteOpenHelper{
         Log.d("DoctorDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
     public List<Doctor> GetDoctorList(ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
+        List<Doctor> list = GetDoctorListFromDB(db, null, order);
 
-        return GetDoctorListFromDB(db, null, order);
+        db.close();
+        return list;
     }
 
     public List<Doctor> GetDoctorListFromDB(SQLiteDatabase db, String dbname, ListOrder order) {

@@ -82,12 +82,17 @@ public class PatientDB extends SQLiteOpenHelper{
 
     // return 1 on success, 0 on failure
     public int AddPatient(Patient pat) {
-        return AddPatientToDB(pat, null);
+        int retval;
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        retval = AddPatientToDB(pat, null, db);
+        db.close();
+
+        return retval;
     }
 
 
-    private int AddPatientToDB(Patient pat, String dbname) {
-        SQLiteDatabase db = this.getWritableDatabase();
+    private int AddPatientToDB(Patient pat, String dbname, SQLiteDatabase db) {
         String uid, tablename;
         int retval = 1;
 
@@ -149,6 +154,7 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
 
@@ -166,23 +172,27 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
         mDbChanged = true;
+        db.close();
     }
 
 
     public List<Patient> GetPatientList(String search, ListOrder order) {
-        return GetPatientListFromDB(search, null, order);
+        SQLiteDatabase db = this.getWritableDatabase();
+        onCreate(db); //// TODO: 15/05/17 Fix this bug!! Following is executed before table is created!!
+        List<Patient> list = GetPatientListFromDB(search, null, order, db);
+        db.close();
+        return  list;
     }
 
 
-    private List<Patient> GetPatientListFromDB(String search, String dbname, ListOrder order) {
+    private List<Patient> GetPatientListFromDB(String search, String dbname, ListOrder order,
+                                               SQLiteDatabase db) {
         List<Patient> patientList = new ArrayList<>();
-        SQLiteDatabase db = this.getWritableDatabase();
         String name, phone, email, pid, gender, uid, desc;
         String query, tablename;
         Patient pat;
         Cursor res;
 
-        onCreate(db); //// TODO: 15/05/17 Fix this bug!! Following is executed before table is created!!
 
         if (dbname == null)
             tablename = PATIENT_LIST;
@@ -270,7 +280,7 @@ public class PatientDB extends SQLiteOpenHelper{
                 continue;
 
             // Copy patient details
-            copy_count += AddPatientToDB(pat, dstnm);
+            copy_count += AddPatientToDB(pat, dstnm, db);
 
             // Find the name of treatment table for this patient
             if (srcnm == null)
@@ -320,9 +330,9 @@ public class PatientDB extends SQLiteOpenHelper{
         db.execSQL(query);
 
         // Copy patient records to new database
-        mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING); // main database
+        mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING, db); // main database
         copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
-        impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING); // to be imported database
+        impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING, db); // to be imported database
         copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
@@ -343,6 +353,7 @@ public class PatientDB extends SQLiteOpenHelper{
         Log.d("PatientDB", query);
         db.execSQL(query);
 
+        db.close();
         return exportdbpath;
     }
 

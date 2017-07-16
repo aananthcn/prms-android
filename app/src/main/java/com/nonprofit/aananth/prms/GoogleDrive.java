@@ -12,12 +12,18 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.Metadata;
+import com.google.android.gms.drive.MetadataBuffer;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.query.Filters;
+import com.google.android.gms.drive.query.Query;
+import com.google.android.gms.drive.query.SearchableField;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -56,10 +62,18 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        Drive.DriveApi.newDriveContents(getGoogleApiClient())
-                .setResultCallback(driveContentsCallback);
         showMessage("GoogleDrive connected");
         Log.i(TAG, "GoogleDrive connected");
+
+        DriveFolder folder = Drive.DriveApi.getRootFolder(getGoogleApiClient());
+        Query query = new Query.Builder().addFilter(Filters.and(
+                Filters.eq(SearchableField.TITLE, "PRMS"),
+                Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder")))
+                .build();
+        folder.queryChildren(getGoogleApiClient(), query)
+                .setResultCallback(PRMSfolderQueryCallBack);
+        //Drive.DriveApi.newDriveContents(getGoogleApiClient()).setResultCallback(driveContentsCallback);
+        //        .setResultCallback(driveContentsCallback);
     }
 
     @Override
@@ -77,11 +91,10 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
             AlertDialog dialog = builder.create();
             dialog.show();
             return;
-        }
-        else {
+        } else {
             try {
                 // !!!
-                result.startResolutionForResult((Activity)mContext, REQUEST_CODE_RESOLVE_ERR);
+                result.startResolutionForResult((Activity) mContext, REQUEST_CODE_RESOLVE_ERR);
             } catch (IntentSender.SendIntentException e) {
                 mGoogleApiClient.connect();
             }
@@ -93,6 +106,36 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
             mGoogleApiClient.disconnect();
         }
     }
+
+    final private ResultCallback<DriveApi.MetadataBufferResult> PRMSfolderQueryCallBack = new
+            ResultCallback<DriveApi.MetadataBufferResult>() {
+                @Override
+                public void onResult(DriveApi.MetadataBufferResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        showMessage("Error while querying root folder");
+                        return;
+                    }
+
+                    final MetadataBuffer buffer = result.getMetadataBuffer();
+                    if (buffer == null) {
+                        showMessage("MetadataBufferResult is null");
+                        return;
+                    }
+
+                    // let us do the file search in a different thread
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            for (Metadata md: buffer) {
+                                if (md == null || !md.isDataValid())
+                                    continue;
+                                Log.d(TAG, "Title: " + md.getTitle() + " Orig.Name: " +
+                                md.getOriginalFilename());
+                            }
+                        }
+                    }.start();
+                }
+            };
 
     final private ResultCallback<DriveApi.DriveContentsResult> driveContentsCallback = new
             ResultCallback<DriveApi.DriveContentsResult>() {
