@@ -21,6 +21,8 @@ public class TreatmentDB extends SQLiteOpenHelper{
     public static final String TREAT_ID = "tid";
     private boolean mDbChanged = false;
 
+    private String TAG = "PRMS-TreatmentDB";
+
 
     // Database creation sql statement
     public TreatmentDB(Context context) {
@@ -51,7 +53,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
                 " ( " + TREAT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, date VARCHAR(40), " +
                 "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
 
-        Log.d("TreatmentDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
     }
 
@@ -78,7 +80,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
                 treat.date + "', '" + treat.complaint +"', '" + treat.prescription +"', '" +
                 treat.doctor + "')";
 
-        Log.d("TreatmentDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         mDbChanged = true;
     }
@@ -92,7 +94,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
                 "', complaint = '" + treat.complaint + "', prescription = '" + treat.prescription +
                 "' WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
-        Log.d("TreatmentDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         mDbChanged = true;
         db.close();
@@ -105,7 +107,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
         String query = "DELETE FROM " + tablename + " WHERE " + TREAT_ID + " = '" + treat.tid + "';";
 
-        Log.d("TreatmentDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         mDbChanged = true;
         db.close();
@@ -128,7 +130,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         Treatment treat;
         String tablename;
 
-        Log.d("TreatmentDB", "GetTreatmentListFromdDB(): dbname = " + dbname);
+        Log.d(TAG, "GetTreatmentListFromdDB(): dbname = " + dbname);
         if (dbname == null)
             tablename = pat.Uid;
         else
@@ -140,7 +142,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
             desc = "";
 
         query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + desc;
-        Log.d("TreatmentDB", query);
+        Log.d(TAG, query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
 
@@ -152,7 +154,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
             return treatmentList;
         }
 
-        Log.d("TreatmentDB", "Number of treatments = "+res.getCount());
+        Log.d(TAG, "Number of treatments = "+res.getCount());
         while(!res.isAfterLast()){
             date = res.getString(res.getColumnIndex("date"));
             complaint = res.getString(res.getColumnIndex("complaint"));
@@ -161,7 +163,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
             tid = res.getString(res.getColumnIndex(TREAT_ID));
 
 
-            Log.d("TreatmentDB", "Date = "+ date + ", Complaint = " + complaint +
+            Log.d(TAG, "Date = "+ date + ", Complaint = " + complaint +
                     ", Prescription = " + prescription);
             treat = new Treatment(pat, tid, complaint, prescription, doctor);
             treat.date = date;
@@ -177,7 +179,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
 
     private boolean isTreatmentExist(Treatment inTrt, List<Treatment> trtList) {
         for (Treatment trt : trtList) {
-            Log.d("TreatmentDB", trt.date+"=="+inTrt.date+" && "+ trt.complaint+"=="+inTrt.complaint);
+            Log.d(TAG, trt.date+"=="+inTrt.date+" && "+ trt.complaint+"=="+inTrt.complaint);
             if ( trt.date.equals(inTrt.date) && trt.complaint.equals(inTrt.complaint) ) {
                 return true;
             }
@@ -190,7 +192,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
         List<Treatment> srcList; // Treatment list from source database
         List<Treatment> dstList; // Treatment list from destination database
 
-        Log.d("TreatmentDB", "Entering mergeTreatments()");
+        Log.d(TAG, "Entering mergeTreatments()");
         srcList = GetTreatmentListFromDB(db, pat, srcdbn, ListOrder.ASCENDING);
         dstList = GetTreatmentListFromDB(db, pat, dstdbn, ListOrder.ASCENDING);
 
@@ -205,12 +207,12 @@ public class TreatmentDB extends SQLiteOpenHelper{
                 count++;
             }
         }
-        Log.d("TreatmentDB", "Added "+count+" treatments to " + dstdbn);
+        Log.d(TAG, "Added "+count+" treatments to " + dstdbn);
     }
 
 
     public boolean isDbChanged() {
-        Log.d("TreatmentDB", "mDbChanged = " + mDbChanged);
+        Log.d(TAG, "mDbChanged = " + mDbChanged);
         return mDbChanged;
     }
 

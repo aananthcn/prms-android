@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static final int MY_PERMISSION_REQUEST = 103;
 
     // Aananth added these member variables
+    private String TAG = "PRMS-MainActivity";
     private int currLayout;
     private Doctor mDoctor;
     private DoctorDB doctorDB;
@@ -183,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d("Main Activity", "Layout set to current layout");
+        Log.d(TAG, "Layout set to current layout");
         if (mMode == Mode.VIEW_TREAT) {
             treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
             renderTreatRecycleView(treatmentList);
@@ -202,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         srchtxt = (EditText) findViewById(R.id.search_txt);
 
-        Log.d("Main Activity", "Search patient records");
+        Log.d(TAG, "Search patient records");
         srchstr = srchtxt.getText().toString();
         patientList = patientDB.GetPatientList(srchstr, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
@@ -275,13 +276,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, "", "");
             patientDB.AddPatient(pat);
-            Log.d("Main Activity", "Added patient '" + pat.Name + "'");
+            Log.d(TAG, "Added patient '" + pat.Name + "'");
         }
         else if (mMode == Mode.UPDATE_PAT) {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
                     patmail.getText().toString(), gender, mCurrPatient.Pid, mCurrPatient.Uid);
             patientDB.UpdatePatient(pat);
-            Log.d("Main Activity", " Updated patient '" + pat.Name + "'");
+            Log.d(TAG, " Updated patient '" + pat.Name + "'");
         }
         myOnBackPressed();
     }
@@ -325,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         mRecyclerView = (RecyclerView) findViewById(R.id.pat_rv);
         if (mRecyclerView == null) {
-            Log.d("Main Activity", "renderPatRecycleView: mRecylerView is null!!");
+            Log.d(TAG, "renderPatRecycleView: mRecylerView is null!!");
             return;
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
@@ -367,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         mRecyclerView = (RecyclerView) findViewById(R.id.treat_rv);
         if (mRecyclerView == null) {
-            Log.d("Main Activity", "renderTreatRecycleView: mRecylerView is null!!");
+            Log.d(TAG, "renderTreatRecycleView: mRecylerView is null!!");
             return;
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
@@ -429,14 +430,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
                     pres.getText().toString(), mDoctor.name );
             treatmentDB.AddTreatment(treat);
-            Log.d("Main Activity", "Added treatment for " + treat.patient.Name);
+            Log.d(TAG, "Added treatment for " + treat.patient.Name);
         }
         else if (mMode == Mode.UPDATE_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
                     comp.getText().toString(), pres.getText().toString(), mDoctor.name);
             treat.date = date.getText().toString();
             treatmentDB.UpdateTreatment(treat);
-            Log.d("Main Activity", "Updated treatment for " + treat.patient.Name);
+            Log.d(TAG, "Updated treatment for " + treat.patient.Name);
         }
 
         myOnBackPressed();
@@ -579,7 +580,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             msg = "Select a file";
         }
         else {
-            Log.d("Main Activity", "Illegal action passed to createFileOpenDialog()");
+            Log.d(TAG, "Illegal action passed to createFileOpenDialog()");
             return;
         }
 
@@ -597,14 +598,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 if (metaCursor.moveToFirst()) {
                     metaCursor.moveToFirst();
                     path = metaCursor.getString(0);
-                    Log.d("Main Activity", "convertUriToFilePath(): path = "+path);
+                    Log.d(TAG, "convertUriToFilePath(): path = "+path);
                 }
             } finally {
                 metaCursor.close();
             }
         }
         else {
-            Log.d("Main Activity", "convertUriToFilePath(): metaCursor is null!!");
+            Log.d(TAG, "convertUriToFilePath(): metaCursor is null!!");
         }
 
         //TODO: Add designs to find full path, till then use "Download" dir
@@ -629,7 +630,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     if (resultData != null) {
                         uri = resultData.getData();
                         path = convertUriToFilePath(uri);
-                        Log.i("Main Activity", "Create file: " + path);
+                        Log.i(TAG, "Create file: " + path);
                         exportDB(path);
                     }
                 }
@@ -639,7 +640,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     if (resultData != null) {
                         uri = resultData.getData();
                         path = convertUriToFilePath(uri);
-                        Log.i("Main Activity", "Open file: " + path);
+                        Log.i(TAG, "Open file: " + path);
                         importDB(path);
                     }
                 }
@@ -647,7 +648,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    public boolean isExternalStorageWritable() {
+    static public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             return true;
@@ -695,7 +696,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 FileChannel src = new FileInputStream(in_file).getChannel();
                 FileChannel dst = new FileOutputStream(out_file).getChannel();
-                Log.i("Main Activity", "Exporting "+ src.size()+ " bytes from "+appDBpath+ " to "+ outpath);
+                Log.i(TAG, "Exporting "+ src.size()+ " bytes from "+appDBpath+ " to "+ outpath);
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
@@ -703,10 +704,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         Toast.LENGTH_SHORT).show();
             }
             else {
-                Log.d("Main Activity", "exportDB(): Can't write into external storage!");
+                Log.d(TAG, "exportDB(): Can't write into external storage!");
             }
         } catch (Exception e) {
-            Log.d("Main Activity", "Got exception! "+ e.toString());
+            Log.d(TAG, "Got exception! "+ e.toString());
         }
     }
 
@@ -733,7 +734,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 FileChannel dst = new FileOutputStream(out_file).getChannel();
                 FileChannel src = new FileInputStream(in_file).getChannel();
-                Log.i("Main Activity", "Importing "+ src.size()+ " bytes from "+merged_filepath+
+                Log.i(TAG, "Importing "+ src.size()+ " bytes from "+merged_filepath+
                         " to "+ appDBpath );
                 dst.transferFrom(src, 0, src.size());
                 src.close();
@@ -743,10 +744,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 in_file.delete(); // delete temp file
             }
             else {
-                Log.d("Main Activity", "exportDB(): Can't write into external storage!");
+                Log.d(TAG, "exportDB(): Can't write into external storage!");
             }
         } catch (Exception e) {
-            Log.d("Main Activity", "Got exception! "+ e.toString());
+            Log.d(TAG, "Got exception! "+ e.toString());
         }
 
         // Restart the app to read the new imported Database
@@ -856,16 +857,22 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // setup Google Drive
         mDrive.connectToGoogleDrive(this);
-        Log.d("Main Activity", "Successful login");
+        Log.d(TAG, "Successful login");
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
+        // check if previous save failed and retry
+        if (mDrive.isSaveCompleted() == false) {
+            mDrive.saveToGoogleDrive();
+        }
+
+        // save backups if any database failed
         if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
             String outpath = createBackupFile("prms-backup.db");
-            Log.d("Main Activity", "onPause: creating " + outpath);
+            Log.d(TAG, "onPause: creating " + outpath);
             mDrive.saveToGoogleDrive();
 
             // backup databases and notify the event to all DB interface classes
@@ -874,7 +881,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             treatmentDB.DbSaved();
             doctorDB.DbSaved();
         }
-
     }
 
     @Override

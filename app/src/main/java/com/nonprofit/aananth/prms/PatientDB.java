@@ -22,6 +22,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
     private Context mContext;
     private boolean mDbChanged = false;
+    private String TAG = "PRMS-PatientDB";
 
 
     public PatientDB(Context context) {
@@ -33,7 +34,7 @@ public class PatientDB extends SQLiteOpenHelper{
     @Override
     public void onCreate(SQLiteDatabase database) {
         String query = getCreateTableStr(null, PATIENT_LIST);
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         database.execSQL(query);
     }
 
@@ -110,7 +111,7 @@ public class PatientDB extends SQLiteOpenHelper{
         String query = "INSERT INTO " + tablename + " (name, phone, email, gender, uid) VALUES ('"+
                 pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '"+ uid + "')";
 
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         try {
             db.execSQL(query);
             mDbChanged = true;
@@ -118,10 +119,10 @@ public class PatientDB extends SQLiteOpenHelper{
         catch (SQLException mSQLException) {
             if(mSQLException instanceof SQLiteConstraintException){
                 //some toast message to user.
-                Log.d("PatientDB", "AddPatient: SQLiteConstraintException");
+                Log.d(TAG, "AddPatient: SQLiteConstraintException");
             }else if(mSQLException instanceof SQLiteDatatypeMismatchException) {
                 //some toast message to user.
-                Log.d("PatientDB", "AddPatient: SQLiteDatatypeMismatchException");
+                Log.d(TAG, "AddPatient: SQLiteDatatypeMismatchException");
             }else {
                 throw mSQLException;
             }
@@ -151,7 +152,7 @@ public class PatientDB extends SQLiteOpenHelper{
                 "', email = '" + pat.Email + "', gender = '" + pat.Gender + "' WHERE uid = '" +
                 pat.Uid + "';";
 
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         mDbChanged = true;
         db.close();
@@ -164,12 +165,12 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // delete treatment history
         query = "DROP TABLE IF EXISTS '" + pat.Uid + "'";
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
 
         // delete the patient
         query = "DELETE FROM " + PATIENT_LIST + " WHERE " + PKEY + " = '" + pat.Pid + "';";
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         mDbChanged = true;
         db.close();
@@ -211,7 +212,7 @@ public class PatientDB extends SQLiteOpenHelper{
                             " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'" +
                     " ORDER BY " + PKEY + desc;
 
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         res = db.rawQuery(query, null);
         res.moveToFirst();
 
@@ -223,7 +224,7 @@ public class PatientDB extends SQLiteOpenHelper{
             return patientList;
         }
 
-        Log.d("PatientDB", "Number of patients = "+res.getCount());
+        Log.d(TAG, "Number of patients = "+res.getCount());
         while(!res.isAfterLast()){
             name = res.getString(res.getColumnIndex("name"));
             phone = res.getString(res.getColumnIndex("phone"));
@@ -233,7 +234,7 @@ public class PatientDB extends SQLiteOpenHelper{
             pid = res.getString(res.getColumnIndex(PKEY));
 
 
-            Log.d("PatientDB", "Name = "+ name + ", Phone: "+phone+", Email = "+email);
+            Log.d(TAG, "Name = "+ name + ", Phone: "+phone+", Email = "+email);
             pat = new Patient(name, phone, email, gender, pid, uid);
             patientList.add(pat);
 
@@ -252,7 +253,7 @@ public class PatientDB extends SQLiteOpenHelper{
         }
 
         String query = "SELECT * FROM " + tableName;
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         Cursor cursor = db.rawQuery(query, null);
 
         if (!cursor.moveToFirst()) {
@@ -261,7 +262,7 @@ public class PatientDB extends SQLiteOpenHelper{
         }
         int count = cursor.getInt(0);
         cursor.close();
-        Log.d("PatientDB", "isTableExists() query returned "+ count + " results!");
+        Log.d(TAG, "isTableExists() query returned "+ count + " results!");
 
         return count > 0;
     }
@@ -310,23 +311,23 @@ public class PatientDB extends SQLiteOpenHelper{
         List<Patient> mainPatList, impoPatList;
 
         query = "PRAGMA foreign_keys = on";
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
 
         // Attach to new and imported databases
         query = "ATTACH DATABASE '"+ importdbpath +"' as " + IMPDB_LN; // db that will be imported
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         query = "ATTACH DATABASE '"+ exportdbpath + "' as "+ NEWDB_LN; // db that will be created
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         query = "BEGIN";
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
 
         // Create patientlist table in the new database
         query = getCreateTableStr(NEWDB_LN, PATIENT_LIST);
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
 
         // Copy patient records to new database
@@ -335,7 +336,7 @@ public class PatientDB extends SQLiteOpenHelper{
         impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING, db); // to be imported database
         copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
-        Log.d("PatientDB", "Total patients added: "+ copied_records + " out of " + total_records);
+        Log.d(TAG, "Total patients added: "+ copied_records + " out of " + total_records);
 
         // Copy doctor records to new database
         DoctorDB dctDB = new DoctorDB(mContext);
@@ -344,13 +345,13 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // Commit and detach
         query = "COMMIT";
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         query = "DETACH " + IMPDB_LN;
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
         query = "DETACH "+ NEWDB_LN;
-        Log.d("PatientDB", query);
+        Log.d(TAG, query);
         db.execSQL(query);
 
         db.close();
@@ -359,7 +360,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
 
     public boolean isDbChanged() {
-        Log.d("PatientDB", "mDbChanged = " + mDbChanged);
+        Log.d(TAG, "mDbChanged = " + mDbChanged);
         return mDbChanged;
     }
 
