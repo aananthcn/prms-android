@@ -163,8 +163,7 @@ public class TreatmentDB extends SQLiteOpenHelper{
             tid = res.getString(res.getColumnIndex(TREAT_ID));
 
 
-            Log.d(TAG, "Date = "+ date + ", Complaint = " + complaint +
-                    ", Prescription = " + prescription);
+            //Log.d(TAG, "Date = "+ date + ", Complaint = " + complaint + ", Prescription = " + prescription);
             treat = new Treatment(pat, tid, complaint, prescription, doctor);
             treat.date = date;
             treatmentList.add(treat);

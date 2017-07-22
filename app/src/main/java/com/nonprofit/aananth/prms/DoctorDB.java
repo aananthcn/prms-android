@@ -145,7 +145,7 @@ public class DoctorDB extends SQLiteOpenHelper{
             return docList;
         }
 
-        Log.d("DoctorDB", "Number of docments = "+res.getCount());
+        Log.d("DoctorDB", "Number of doctors = "+res.getCount());
         while(!res.isAfterLast()){
             name = res.getString(res.getColumnIndex("name"));
             phone = res.getString(res.getColumnIndex("phone"));
@@ -153,7 +153,7 @@ public class DoctorDB extends SQLiteOpenHelper{
             id = res.getInt(res.getColumnIndex(DOCT_ID));
 
 
-            Log.d("DoctorDB", "Name = "+ name + ", Phone = " + phone + ", Email = " + email);
+            //Log.d("DoctorDB", "Name = "+ name + ", Phone = " + phone + ", Email = " + email);
             doc = new Doctor(name, phone, email, id);
             docList.add(doc);
 

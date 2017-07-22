@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.lang.String;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "-----------------\nWelcome to PRMS!!\n---");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
@@ -656,24 +658,33 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return false;
     }
 
-    private String createBackupFile(String filename) {
+    private String getBackupFilePath(String filename) {
         String storagepath = Environment.getExternalStorageDirectory().toString();
         String outpath = storagepath + "/Download/" + filename;
 
         File file = new File(outpath);
-        try {
-            file.createNewFile();
-            if (file.exists()) {
-                OutputStream fo = new FileOutputStream(file);
-                byte data[] = {'d', 'u', 'm', 'm', 'y'};
-                fo.write(data);
-                fo.close();
+        if (!file.exists()) {
+            try {
+                if (file.createNewFile()) {
+                    OutputStream fo = new FileOutputStream(file);
+                    byte data[] = {'d', 'u', 'm', 'm', 'y'};
+                    fo.write(data);
+                    fo.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return outpath;
+    }
+
+    private Date getFileDate(String fpath) {
+        File file = new File(fpath);
+        Date lastModDate = new Date(file.lastModified());
+
+        Log.d(TAG, "File " + fpath + " modified date: " + lastModDate.toString());
+        return lastModDate;
     }
 
     // This function copies the MAIN_DATABASE used by this app to external storage path
@@ -864,22 +875,27 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onPause() {
         super.onPause();
 
-        // check if previous save failed and retry
-        if (mDrive.isSaveCompleted() == false) {
-            mDrive.saveToGoogleDrive();
-        }
+        String backupfile = "prms-backup.db";
+        String backuppath = getBackupFilePath(backupfile);
+        Date dbDate;
 
         // save backups if any database failed
         if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
-            String outpath = createBackupFile("prms-backup.db");
-            Log.d(TAG, "onPause: creating " + outpath);
-            mDrive.saveToGoogleDrive();
+            Log.d(TAG, "onPause: creating " + backuppath);
 
             // backup databases and notify the event to all DB interface classes
-            this.exportDB(outpath);
+            this.exportDB(backuppath);
             patientDB.DbSaved();
             treatmentDB.DbSaved();
             doctorDB.DbSaved();
+        }
+
+        // backup to Google Drive
+        if ((dbDate = getFileDate(backuppath)) != null) {
+            mDrive.saveToGoogleDrive(dbDate);
+        }
+        else {
+            Log.d(TAG, "Database file date cannot be read!!");
         }
     }
 

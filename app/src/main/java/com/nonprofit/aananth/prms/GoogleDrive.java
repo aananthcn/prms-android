@@ -37,6 +37,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Date;
 
 import static com.nonprofit.aananth.prms.MainActivity.PACKAGE_NAME;
 import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
@@ -59,7 +60,8 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
 
     private DriveId mPRMS_folderId = null;
     private DriveId mPRMS_dbFileId = null;
-    private boolean mSaveCompleted = true;
+    private Date    mPRMS_lfDbDate;
+    private Date    mPRMS_gdDbDate;
     private boolean mSaveThreadRunning = false;
 
     // M e t h o d s
@@ -120,7 +122,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
         }
     }
 
-    final private ResultCallback<DriveApi.MetadataBufferResult> RootfolderQueryCallBack = new
+    final ResultCallback<DriveApi.MetadataBufferResult> RootfolderQueryCallBack = new
             ResultCallback<DriveApi.MetadataBufferResult>() {
                 @Override
                 public void onResult(DriveApi.MetadataBufferResult result) {
@@ -158,7 +160,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
                                         (md.getTitle().equals(BACKUPFOLDER))) {
                                     app_folder_exist = true;
                                     mPRMS_folderId = md.getDriveId();
-                                    Log.d(TAG, BACKUPFOLDER + " folder found...");
+                                    Log.d(TAG, BACKUPFOLDER + " folder found in Google drive!");
                                 }
                             }
 
@@ -171,7 +173,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
                                         .await()
                                         .getDriveFolder()
                                         .getDriveId();
-                                Log.d(TAG, "Creating " + BACKUPFOLDER + " folder...");
+                                Log.d(TAG, "Creating " + BACKUPFOLDER + " folder in Google drive");
                             }
                             mSaveThreadRunning = false;
                             Log.d(TAG, "RootfolderQueryCallback Thread exited...");
@@ -181,26 +183,26 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
             };
 
 
-    protected void saveToGoogleDrive() {
+    protected void saveToGoogleDrive(Date dbdate) {
         if (mPRMS_folderId == null)
             return;
+
+        mPRMS_lfDbDate = dbdate;
 
         if (!getGoogleApiClient().isConnected()) {
             getGoogleApiClient().connect();
         }
 
-        Log.d(TAG, "saveToGoogleDrive running...");
-        DriveFolder folder = mPRMS_folderId.asDriveFolder();
-
         // before we save, we need to first find out if we are going to overwrite or create
+        DriveFolder folder = mPRMS_folderId.asDriveFolder();
         folder.listChildren(getGoogleApiClient()).setResultCallback(PRMSfolderQueryCallBack);
-
-        mSaveCompleted = false;
+        Log.d(TAG, "saveToGoogleDrive PRMS folder query triggered...");
     }
 
     final private ResultCallback<DriveApi.MetadataBufferResult> PRMSfolderQueryCallBack = new
             ResultCallback<DriveApi.MetadataBufferResult>() {
                 public void onResult(final DriveApi.MetadataBufferResult result) {
+
                     if (!result.getStatus().isSuccess()) {
                         showMessage("Error while querying PRMS folder");
                         Log.d(TAG, "PRMSfolderQueryCallback error");
@@ -214,6 +216,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
                     }
 
                     // let us do the file search in a different thread
+                    Log.d(TAG, "PRMSfolderQueryCallback: Starting new thread...");
                     new Thread() {
                         @Override
                         public void run() {
@@ -227,8 +230,9 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
                                         (md.getTitle().equals(BACKUPFILE))) {
                                     db_file_exist = true;
                                     mPRMS_dbFileId = md.getDriveId();
-                                    Log.d(TAG, BACKUPFILE + " found...");
-                                    Log.d(TAG, "Updating " + BACKUPFILE + "...");
+                                    mPRMS_gdDbDate = md.getModifiedDate();
+                                    Log.d(TAG, BACKUPFILE + " found in Google drive!");
+                                    break;
                                 }
                             }
 
@@ -241,54 +245,71 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
                                 mPRMS_dbFileId = mPRMS_folderId.asDriveFolder()
                                         .createFile(getGoogleApiClient(), changeSet, null)
                                         .await().getDriveFile().getDriveId();
-                                Log.d(TAG, "Creating " + BACKUPFILE + "...");
+                                mPRMS_gdDbDate = new Date(0L); // let us go back to epoch!
+                                Log.d(TAG, "Creating " + BACKUPFILE + " in Google drive...");
                             }
 
-                            try {
-                                //File sd = Environment.getExternalStorageDirectory();
-                                com.google.android.gms.common.api.Status status;
-
-                                DriveFile file = mPRMS_dbFileId.asDriveFile();
-                                DriveApi.DriveContentsResult driveContentsResult = file.open(
-                                        getGoogleApiClient(), DriveFile.MODE_WRITE_ONLY, null).await();
-                                if (!driveContentsResult.getStatus().isSuccess()) {
-                                    Log.d(TAG, "Can't open database file for writing!");
-                                    return;
-                                }
-
-                                String appDBpath = "/data/" + PACKAGE_NAME + "/databases/" + MAIN_DATABASE;
-                                File data = Environment.getDataDirectory();
-                                File db_file = new File(data, appDBpath);
-
-                                if ((db_file != null) && (driveContentsResult != null)) {
-                                    DriveContents driveContents = driveContentsResult.getDriveContents();
-                                    OutputStream outputStream = driveContents.getOutputStream();
-                                    FileInputStream inputStream = new FileInputStream(db_file);
-                                    byte[] buffer = new byte[4096];
-                                    int bytesRead;
-
-                                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                                        outputStream.write(buffer, 0, bytesRead);
-                                    }
-                                    status = driveContents.commit(getGoogleApiClient(), null).await();
-                                    if (status.isSuccess()) {
-                                        mSaveCompleted = true;
-                                        Log.d(TAG, "Success!! Database copied to GoogleDrive");
-                                    }
-                                    else {
-                                        Log.d(TAG, "Database copy fail! Reason: " + status.getStatusMessage());
-                                    }
-                                } else {
-                                    Log.d(TAG, "Can't access external storage or Google Drive!");
-                                }
-                            } catch (Exception e) {
-                                Log.d(TAG, "Got exception! " + e.toString());
+                            // update google drive backup file if phone has got the recent updates
+                            Log.d(TAG, "GoogleDrive backup file date: " + mPRMS_gdDbDate.toString());
+                            if (mPRMS_gdDbDate.after(mPRMS_lfDbDate)) {
+                                Log.d(TAG, "GoogleDrive backup not done! Date is later than phone!");
                             }
-                            Log.d(TAG, "Thread exited...");
+                            else {
+                                updateGoogleDriveFile();
+                            }
+                            Log.d(TAG, "PRMS folder query thread exited...");
                         }
                     }.start();
                 }
             };
+
+    private void updateGoogleDriveFile() {
+        Log.d(TAG, "Updating " + BACKUPFILE + "to Google drive...");
+        try {
+            com.google.android.gms.common.api.Status status;
+            DriveFile file = mPRMS_dbFileId.asDriveFile();
+            DriveApi.DriveContentsResult driveContentsResult = file.open(
+                    getGoogleApiClient(), DriveFile.MODE_WRITE_ONLY, null).await();
+
+            if (driveContentsResult.getStatus() == null) {
+                Log.d(TAG, "driveContentsResult.getStatus() is null!");
+                return;
+            }
+
+            if (!driveContentsResult.getStatus().isSuccess()) {
+                Log.d(TAG, "Can't open Google drive database file for writing!");
+                Log.d(TAG, driveContentsResult.getStatus().getStatusMessage());
+                return;
+            }
+
+            String appDBpath = "/data/" + PACKAGE_NAME + "/databases/" + MAIN_DATABASE;
+            File data = Environment.getDataDirectory();
+            File db_file = new File(data, appDBpath);
+
+            if (db_file != null) {
+                DriveContents driveContents = driveContentsResult.getDriveContents();
+                OutputStream outputStream = driveContents.getOutputStream();
+                FileInputStream inputStream = new FileInputStream(db_file);
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                status = driveContents.commit(getGoogleApiClient(), null).await();
+                if (status.isSuccess()) {
+                    Log.d(TAG, "Success!! Database copied to Google drive");
+                } else {
+                    Log.d(TAG, "Google drive database copy fail! Reason: " + status.getStatusMessage());
+                }
+            } else {
+                Log.d(TAG, "Can't access local database file for backup to Google drive!");
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "updateGoogleDriveFile(): Got exception! " + e.toString());
+        }
+
+    }
 
     public void showMessage(String message) {
         Toast.makeText(mContext, message, Toast.LENGTH_LONG).show();
@@ -296,9 +317,5 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
 
     public GoogleApiClient getGoogleApiClient() {
         return mGoogleApiClient;
-    }
-
-    public boolean isSaveCompleted() {
-        return mSaveCompleted;
     }
 }

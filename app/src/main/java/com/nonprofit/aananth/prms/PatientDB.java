@@ -234,7 +234,7 @@ public class PatientDB extends SQLiteOpenHelper{
             pid = res.getString(res.getColumnIndex(PKEY));
 
 
-            Log.d(TAG, "Name = "+ name + ", Phone: "+phone+", Email = "+email);
+            //Log.d(TAG, "Name = "+ name + ", Phone: "+phone+", Email = "+email);
             pat = new Patient(name, phone, email, gender, pid, uid);
             patientList.add(pat);
 
