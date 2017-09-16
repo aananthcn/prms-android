@@ -8,4 +8,7 @@
     <item
         android:id="@+id/import_db"
         android:title="Import Database" />
+    <item
+        android:id="@+id/statistics_pat"
+        android:title="Patients Statistics" />
 </menu>

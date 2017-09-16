@@ -24,12 +24,13 @@
         android:id="@+id/item_phone"
         android:layout_width="150sp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="9sp"
         android:layout_alignParentRight="true"
+        android:layout_marginTop="9sp"
+        android:layout_toEndOf="@+id/item_name"
         android:text="phone"
-        android:textSize="15sp"
+        android:textAlignment="center"
         android:textColor="#606060"
-        android:layout_toEndOf="@+id/item_name" />
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/item_email"
@@ -40,5 +41,19 @@
         android:ellipsize="end"
         android:maxLines="5"
         android:text="email"
+        android:textColorHighlight="#707070" />
+
+    <TextView
+        android:id="@+id/s_no"
+        android:layout_width="150sp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/item_phone"
+        android:layout_marginBottom="9dp"
+        android:layout_toEndOf="@+id/item_name"
+        android:ellipsize="end"
+        android:maxLines="5"
+        android:text="s.no"
+        android:textAlignment="center"
+        android:textColor="@color/colorPrimary"
         android:textColorHighlight="#707070" />
 </RelativeLayout>
