@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "639879846844",
+    "project_id": "prms-173808"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639879846844:android:30351c0f0e7f0b19",
+        "android_client_info": {
+          "package_name": "com.nonprofit.aananth.prms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "639879846844-r1tmhhg7o387015tqbbsbjfvv404j2eu.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "639879846844-c96g030p5t8sauivt94fepdqr2oj0qgf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nonprofit.aananth.prms",
+            "certificate_hash": "313b29b528b71ffc03d29b893be0c0cffe2addbe"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3uBDWMeTxOgqYvPD8jpbvFDwuDXM3Z8o"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
