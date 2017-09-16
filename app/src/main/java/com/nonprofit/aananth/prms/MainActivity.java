@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         VIEW_PAT, ADD_PAT, UPDATE_PAT,
         VIEW_TREAT, ADD_TREAT, UPDATE_TREAT,
         VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,
-        MAX_MODE
+        VIEW_PAT_STAT, MAX_MODE
     }
     public static String PACKAGE_NAME;
     public static final int CREATE_FILE = 101;
@@ -515,9 +515,47 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             case R.id.add_doctor:
                 AddNewDoctor();
                 return true;
+            case R.id.statistics_pat:
+                ShowPatientStatistics();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void ShowPatientStatistics() {
+        List<Treatment> tlist;
+        int max_treats, males, total_pat;
+        Patient top_pat;
+
+        update_mode(Mode.VIEW_PAT_STAT);
+        setContentView(R.layout.statistics_pat);
+
+        males = max_treats = 0;
+        total_pat = patientList.size();
+        top_pat = mCurrPatient;
+
+        TextView no_of_pat_v = (TextView) findViewById(R.id.total_pat);
+        TextView male_pat_v = (TextView) findViewById(R.id.male_pat);
+        TextView female_pat_v = (TextView) findViewById(R.id.female_pat);
+        TextView top_pat_v = (TextView) findViewById(R.id.top_pat);
+
+        for (Patient pat: patientList) {
+            if (pat.Gender.equals("Male")) {
+                males++;
+            }
+            tlist = treatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
+            if (tlist.size() > max_treats) {
+                top_pat = pat;
+                max_treats = tlist.size();
+            }
+        }
+
+        no_of_pat_v.setText(String.format("%d",total_pat));
+        male_pat_v.setText(String.format("%.2f", (males * 100.0)/total_pat) + "% Males  | ");
+        female_pat_v.setText(String.format("%.2f", (100.0 * (total_pat - males))/total_pat) + "% Females");
+        top_pat_v.setText(String.format("%s", top_pat.Name) + " is the Top Patient with " +
+                String.format("%d", max_treats) + " visits");
     }
 
     @Override
@@ -853,6 +891,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private void update_mode(Mode mode) {
         mModePrev = mMode;
         mMode = mode;
+        Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
     }
 
     public void onLogin(View view) {
@@ -866,9 +905,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         inflater.inflate(R.menu.main_menu, mMenu);
         getDynamicFilePermission();
 
-        // setup Google Drive
-        mDrive.connectToGoogleDrive(this);
-        Log.d(TAG, "Successful login");
+        //TODO: setup Google Drive
+        //mDrive.connectToGoogleDrive(this);
+        //Log.d(TAG, "Successful login");
     }
 
     @Override
@@ -918,33 +957,72 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         update_mode(Mode.VIEW_PAT);
     }
 
+
     public void myOnBackPressed() {
-        if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
-            currLayout = R.layout.login;
-            setContentView(currLayout);
-            setupDoctorLoginSpinner();
-            update_mode(Mode.LOGIN);
+       if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
+           currLayout = R.layout.login;
+           setContentView(currLayout);
+           setupDoctorLoginSpinner();
+           update_mode(Mode.LOGIN);
+       }
+       else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
+           if (mModePrev == Mode.UPDATE_TREAT) {
+               EditTreatmentRecord();
+           }
+           else if (mModePrev == Mode.VIEW_TREAT || mModePrev == Mode.ADD_TREAT) {
+               renderTreatmentView();
+           }
+           else if (mModePrev == Mode.UPDATE_PAT) {
+               EditPatientRecord();
+           }
+           else {
+               renderPatientview();
+           }
+       }
+       else if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
+           renderTreatmentView();
+       }
+       else {
+           renderPatientview();
+       }
+   }
+
+    public void QueryBeforeHandleBackPress() {
+
+        if ((mMode != Mode.ADD_TREAT) && (mMode != Mode.UPDATE_TREAT) &&
+                (mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
+                (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
+            myOnBackPressed();
+            return;
         }
-        else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
-            if (mModePrev == Mode.UPDATE_TREAT) {
-                EditTreatmentRecord();
+
+        Log.d(TAG, "QueryBeforeHandleBackPress: mMode = " + mMode);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want to save this record?");
+        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked ok button
+                if ((mMode == Mode.ADD_TREAT) || (mMode == Mode.UPDATE_TREAT)) {
+                    SaveTreatmentRecord(findViewById(android.R.id.content));
+                }
+                else if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
+                    SavePatientRecord(findViewById(android.R.id.content));
+                }
+                else if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
+                    SaveDocRecord(findViewById(android.R.id.content));
+                }
+                myOnBackPressed();
             }
-            else if (mModePrev == Mode.VIEW_TREAT || mModePrev == Mode.ADD_TREAT) {
-                renderTreatmentView();
+        });
+        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+                myOnBackPressed();
             }
-            else if (mModePrev == Mode.UPDATE_PAT) {
-                EditPatientRecord();
-            }
-            else {
-                renderPatientview();
-            }
-        }
-        else if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
-            renderTreatmentView();
-        }
-        else {
-            renderPatientview();
-        }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
 
@@ -955,7 +1033,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             finish();
         }
         else if (mMode != Mode.VIEW_PAT) {
-            myOnBackPressed();
+            QueryBeforeHandleBackPress();
         }
         else {
             if (exit) {

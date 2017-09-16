@@ -108,7 +108,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
             return;
         } else {
             try {
-                // !!!
+                Log.d(TAG, "Connection failed, trying to resolve...");
                 result.startResolutionForResult((Activity) mContext, REQUEST_CODE_RESOLVE_ERR);
             } catch (IntentSender.SendIntentException e) {
                 mGoogleApiClient.connect();
@@ -190,6 +190,7 @@ public class GoogleDrive implements GoogleApiClient.ConnectionCallbacks,
         mPRMS_lfDbDate = dbdate;
 
         if (!getGoogleApiClient().isConnected()) {
+            Log.d(TAG, "Disconnected! Establishing connection...");
             getGoogleApiClient().connect();
         }
 

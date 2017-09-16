@@ -18,13 +18,14 @@ public class PatRecyclerAdapter extends RecyclerView.Adapter<PatRecyclerAdapter.
 
     // http://www.androidhive.info/2016/01/android-working-with-recycler-view/
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView name, phone, email;
+        public TextView name, phone, email, s_no;
 
         public ViewHolder(View view) {
             super(view);
             name = (TextView) view.findViewById(R.id.item_name);
             phone = (TextView) view.findViewById(R.id.item_phone);
             email = (TextView) view.findViewById(R.id.item_email);
+            s_no = (TextView) view.findViewById(R.id.s_no);
         }
     }
 
@@ -54,6 +55,7 @@ public class PatRecyclerAdapter extends RecyclerView.Adapter<PatRecyclerAdapter.
         holder.name.setText(patient.Name);
         holder.email.setText(patient.Email);
         holder.phone.setText(patient.Phone);
+        holder.s_no.setText(String.format("%d",position+1));
     }
 
     // Return the size of your dataset (invoked by the layout manager)
