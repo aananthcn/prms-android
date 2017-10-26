@@ -337,6 +337,7 @@ public class PatientDB extends SQLiteOpenHelper{
         copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d(TAG, "Total patients added: "+ copied_records + " out of " + total_records);
+        mDbChanged = true;
 
         // Copy doctor records to new database
         DoctorDB dctDB = new DoctorDB(mContext);

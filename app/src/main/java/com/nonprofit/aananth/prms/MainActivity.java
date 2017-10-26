@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     // Aananth added these member variables
     private String TAG = "PRMS-MainActivity";
+    private String BACKUPFILE = "prms-backup.db";
     private int currLayout;
     private Doctor mDoctor;
     private DoctorDB doctorDB;
@@ -89,7 +90,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
-    private GoogleDrive mDrive;
 
 
     @Override
@@ -106,7 +106,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         treatmentDB = new TreatmentDB(this);
         doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
-        mDrive = new GoogleDrive();
 
         setupDoctorLoginSpinner();
     }
@@ -749,8 +748,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
-                Toast.makeText(getBaseContext(), out_file.toString(),
-                        Toast.LENGTH_SHORT).show();
             }
             else {
                 Log.d(TAG, "exportDB(): Can't write into external storage!");
@@ -762,6 +759,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     // This function merges databases
     public void importDB(String inpath) {
+        // first backup the current data
+        doDatabaseBackup("prms-last-backup.db", true);
+
         // merging starts from Patients so that their treatment and doctors are merged
         String merged_filepath = patientDB.mergeDB(inpath);
 
@@ -788,9 +788,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 dst.transferFrom(src, 0, src.size());
                 src.close();
                 dst.close();
-                Toast.makeText(getBaseContext(), in_file.toString(),
-                        Toast.LENGTH_SHORT).show();
                 in_file.delete(); // delete temp file
+                doDatabaseBackup(BACKUPFILE, true);
             }
             else {
                 Log.d(TAG, "exportDB(): Can't write into external storage!");
@@ -910,16 +909,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         //Log.d(TAG, "Successful login");
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        String backupfile = "prms-backup.db";
+    public void doDatabaseBackup(String backupfile, boolean force) {
         String backuppath = getBackupFilePath(backupfile);
-        Date dbDate;
 
         // save backups if any database failed
-        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged()) {
+        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
             Log.d(TAG, "onPause: creating " + backuppath);
 
             // backup databases and notify the event to all DB interface classes
@@ -927,21 +921,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             patientDB.DbSaved();
             treatmentDB.DbSaved();
             doctorDB.DbSaved();
+            Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
+                    Toast.LENGTH_SHORT).show();
         }
+    }
 
-        // backup to Google Drive
-        if ((dbDate = getFileDate(backuppath)) != null) {
-            mDrive.saveToGoogleDrive(dbDate);
-        }
-        else {
-            Log.d(TAG, "Database file date cannot be read!!");
-        }
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        doDatabaseBackup(BACKUPFILE, false);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mDrive.disconnectFromGoogleDrive();
     }
 
 

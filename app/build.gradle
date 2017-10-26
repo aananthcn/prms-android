@@ -16,8 +16,8 @@ android {
         applicationId "com.nonprofit.aananth.prms"
         minSdkVersion 21
         targetSdkVersion 25
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.6"
 
         multiDexEnabled true
         setProperty("archivesBaseName", "PRMS-$versionName")
@@ -55,5 +55,4 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:recyclerview-v7:25.3.0'
     compile 'com.android.support:design:25.3.0'
-    compile 'com.google.android.gms:play-services:9.0.0'
 }
