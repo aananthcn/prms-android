@@ -33,7 +33,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase database) {
-        String query = getCreateTableStr(null, PATIENT_LIST);
+        String query = getCreateTableStr(PATIENT_LIST);
         Log.d(TAG, query);
         database.execSQL(query);
     }
@@ -64,15 +64,10 @@ public class PatientDB extends SQLiteOpenHelper{
 
 
     // Patient table creation sql statement
-    private String getCreateTableStr(String dbname, String table) {
+    private String getCreateTableStr(String table) {
         String query, tablename;
 
-        if (dbname == null) {
-            tablename = table;
-        } else {
-            tablename = dbname + "." + table; // here dbname is the logical name!!
-        }
-
+        tablename = table;
         query = "CREATE TABLE IF NOT EXISTS " + tablename + " ( " + PKEY +
                 " INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100), phone VARCHAR(30), " +
                 " email VARCHAR(60), gender VARCHAR(20), uid VARCHAR(100) UNIQUE )";
@@ -86,32 +81,31 @@ public class PatientDB extends SQLiteOpenHelper{
         int retval;
         SQLiteDatabase db = this.getWritableDatabase();
 
-        retval = AddPatientToDB(pat, null, db);
+        retval = AddPatientToDB(pat, db);
         db.close();
 
         return retval;
     }
 
 
-    private int AddPatientToDB(Patient pat, String dbname, SQLiteDatabase db) {
+    private int AddPatientToDB(Patient pat, SQLiteDatabase db) {
         String uid, tablename;
         int retval = 1;
 
-        if (dbname == null) {
-            // new patient added from UI
-            tablename = PATIENT_LIST;
-            uid = (pat.Name+"_"+ new Date()).replaceAll("[^a-zA-Z0-9]+","_");;
-        } else {
-            // patient from other db is copied to new db
-            tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
+        // new patient added from UI
+        tablename = PATIENT_LIST;
+        if (pat.Uid == null || pat.Uid.equals("")) {
+            uid = (pat.Name + "_" + new Date()).replaceAll("[^a-zA-Z0-9]+", "_");
+        }
+        else {
             uid = pat.Uid;
         }
 
+        String query = "INSERT INTO " + tablename + " (name, phone, email, gender, uid) VALUES ('" +
+                pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '" +
+                uid + "')";
 
-        String query = "INSERT INTO " + tablename + " (name, phone, email, gender, uid) VALUES ('"+
-                pat.Name + "', '" + pat.Phone +"', '" + pat.Email + "', '" + pat.Gender + "', '"+ uid + "')";
-
-        Log.d(TAG, query);
+        Log.d(TAG, query); // add new patient to database
         try {
             db.execSQL(query);
             mDbChanged = true;
@@ -126,19 +120,14 @@ public class PatientDB extends SQLiteOpenHelper{
             }else {
                 throw mSQLException;
             }
-            retval = 0; // add failure!!
+            retval = 0; //add failure!!
         }
 
         // If this is new patient, then create Treatment Table
         if (retval > 0) {
-            TreatmentDB treatDB = new TreatmentDB(mContext);
             String treatTable;
-
-            if (dbname == null)
-                treatTable = uid;
-            else
-                treatTable = dbname + "." + uid;
-
+            TreatmentDB treatDB = new TreatmentDB(mContext);
+            treatTable = uid;
             treatDB.createTreatmentTableIfNotExist(db, treatTable);
         }
 
@@ -180,25 +169,20 @@ public class PatientDB extends SQLiteOpenHelper{
     public List<Patient> GetPatientList(String search, ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
         onCreate(db); //// TODO: 15/05/17 Fix this bug!! Following is executed before table is created!!
-        List<Patient> list = GetPatientListFromDB(search, null, order, db);
+        List<Patient> list = GetPatientListFromDB(search, order, db);
         db.close();
         return  list;
     }
 
 
-    private List<Patient> GetPatientListFromDB(String search, String dbname, ListOrder order,
-                                               SQLiteDatabase db) {
+    private List<Patient> GetPatientListFromDB(String search, ListOrder order, SQLiteDatabase db) {
         List<Patient> patientList = new ArrayList<>();
         String name, phone, email, pid, gender, uid, desc;
         String query, tablename;
         Patient pat;
         Cursor res;
 
-
-        if (dbname == null)
-            tablename = PATIENT_LIST;
-        else
-            tablename = dbname + "." + PATIENT_LIST; // here dbname is the logical name!!
+        tablename = PATIENT_LIST;
 
         if (order == ListOrder.REVERSE)
             desc = " DESC";
@@ -217,6 +201,7 @@ public class PatientDB extends SQLiteOpenHelper{
         res.moveToFirst();
 
         if (res.getCount() <= 0) {
+            Log.d(TAG, "Query on database '" + db.getPath() + "' returned 0 elements!");
             pat = new Patient("Empty", "", "", "", "", "");
             patientList.add(pat);
 
@@ -253,6 +238,7 @@ public class PatientDB extends SQLiteOpenHelper{
         }
 
         String query = "SELECT * FROM " + tableName;
+        //String query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tableName + "'";
         Log.d(TAG, query);
         Cursor cursor = db.rawQuery(query, null);
 
@@ -262,7 +248,7 @@ public class PatientDB extends SQLiteOpenHelper{
         }
         int count = cursor.getInt(0);
         cursor.close();
-        Log.d(TAG, "isTableExists() query returned "+ count + " results!");
+        Log.d(TAG, "isTableExists() query on "+db.getPath()+" returned "+ count + " results!");
 
         return count > 0;
     }
@@ -270,93 +256,90 @@ public class PatientDB extends SQLiteOpenHelper{
 
     // This function copies all patient data from first argument to destination database (4th arg)
     // This function also merges treatments by checking for duplicate entries
-    private int CopyPatListToDB(List<Patient> patList, SQLiteDatabase db, String srcnm, String dstnm) {
+    private int CopyPatListToDB(List<Patient> patList, SQLiteDatabase sdb, SQLiteDatabase ddb) {
         int copy_count = 0;
         String src_table;
         TreatmentDB treatDB = new TreatmentDB(mContext);
+        List<Patient> dstPatList = GetPatientListFromDB(null, null, ddb);
+        boolean patient_in_dst_db;
 
         // Merge treatments for every patients
         for (Patient pat: patList) {
+            Log.d(TAG, pat.Name);
+            patient_in_dst_db = false;
             if (pat.Name.equals("Empty"))
                 continue;
 
-            // Copy patient details
-            copy_count += AddPatientToDB(pat, dstnm, db);
+            // Check if the patient already exist in destination database
+            for (Patient dpat: dstPatList) {
+                //if ((dpat.Uid.equals(pat.Uid)) ||
+                //        (dpat.Name.equals(pat.Name) && dpat.Phone.equals(pat.Phone))) {
+                    // FIXME: The intent of the above code is to merge patients with different entries, doesn't work!!
+                if ((dpat.Uid.equals(pat.Uid))) {
+                    patient_in_dst_db = true;
+                    break;
+                }
+            }
 
-            // Find the name of treatment table for this patient
-            if (srcnm == null)
-                src_table = pat.Uid;
-            else
-                src_table = srcnm + "." + pat.Uid;
+            if (!patient_in_dst_db) {
+                // Add patient details to destination database
+                copy_count += AddPatientToDB(pat, ddb);
+                dstPatList.add(pat); // this will help removing any redundant names in incoming db!
+            }
 
             // Copy treatments if the treatment table is valid
-            if (isTableExists(db, src_table)) {
-                treatDB.mergeTreatments(db, pat, srcnm, dstnm);
+            src_table = pat.Uid;
+            if (isTableExists(sdb, src_table)) {
+                int treat_cnt = treatDB.mergeTreatmentsToDB(pat, sdb, ddb);
+                Log.d(TAG, "Merged " + treat_cnt + " treatments for patient " + pat.Name +
+                        " from " + sdb.getPath() + " to " + ddb.getPath() + "!");
             }
         }
+        Log.d(TAG, "Merged / added " + copy_count + " patients!");
 
         return copy_count;
     }
 
 
     public String mergeDB(String inpath) {
-        SQLiteDatabase db = this.getWritableDatabase();
         String storagepath = Environment.getExternalStorageDirectory().toString();
-        String exportdbpath = storagepath + "/Download/TEMP.db";
-        String importdbpath = storagepath + inpath;
-        String IMPDB_LN = "impdb";
-        String NEWDB_LN = "newdb";
+        String newdbpath = storagepath + "/Download/TEMP.db";
+        String inputdbpath = storagepath + inpath;
+        SQLiteDatabase dbi, dbn; // input, new
+        SQLiteDatabase dbm = this.getReadableDatabase(); // main or current
+
         String query;
         int total_records, copied_records = 0;
         List<Patient> mainPatList, impoPatList;
 
-        query = "PRAGMA foreign_keys = on";
-        Log.d(TAG, query);
-        db.execSQL(query);
-
-        // Attach to new and imported databases
-        query = "ATTACH DATABASE '"+ importdbpath +"' as " + IMPDB_LN; // db that will be imported
-        Log.d(TAG, query);
-        db.execSQL(query);
-        query = "ATTACH DATABASE '"+ exportdbpath + "' as "+ NEWDB_LN; // db that will be created
-        Log.d(TAG, query);
-        db.execSQL(query);
-        query = "BEGIN";
-        Log.d(TAG, query);
-        db.execSQL(query);
+        // Attach to new and input databases
+        dbi = SQLiteDatabase.openDatabase(inputdbpath, null, SQLiteDatabase.OPEN_READONLY);
+        dbn = SQLiteDatabase.openOrCreateDatabase(newdbpath, null);
 
         // Create patientlist table in the new database
-        query = getCreateTableStr(NEWDB_LN, PATIENT_LIST);
+        query = getCreateTableStr(PATIENT_LIST);
         Log.d(TAG, query);
-        db.execSQL(query);
+        dbn.execSQL(query);
 
         // Copy patient records to new database
-        mainPatList = GetPatientListFromDB(null, null, ListOrder.ASCENDING, db); // main database
-        copied_records += CopyPatListToDB(mainPatList, db, null, NEWDB_LN);
-        impoPatList = GetPatientListFromDB(null, IMPDB_LN, ListOrder.ASCENDING, db); // to be imported database
-        copied_records += CopyPatListToDB(impoPatList, db, IMPDB_LN, NEWDB_LN);
+        mainPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbm); // from main database
+        copied_records += CopyPatListToDB(mainPatList, dbm, dbn);
+        impoPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbi); // from input database
+        copied_records += CopyPatListToDB(impoPatList, dbi, dbn);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d(TAG, "Total patients added: "+ copied_records + " out of " + total_records);
         mDbChanged = true;
 
         // Copy doctor records to new database
         DoctorDB dctDB = new DoctorDB(mContext);
-        dctDB.mergeDoctors(db, null, NEWDB_LN);
-        dctDB.mergeDoctors(db, IMPDB_LN, NEWDB_LN);
+        dctDB.mergeDoctorsToDB(dbm, dbn);
+        dctDB.mergeDoctorsToDB(dbi, dbn);
 
-        // Commit and detach
-        query = "COMMIT";
-        Log.d(TAG, query);
-        db.execSQL(query);
-        query = "DETACH " + IMPDB_LN;
-        Log.d(TAG, query);
-        db.execSQL(query);
-        query = "DETACH "+ NEWDB_LN;
-        Log.d(TAG, query);
-        db.execSQL(query);
+        dbn.close();
+        dbi.close();
+        dbm.close();
 
-        db.close();
-        return exportdbpath;
+        return newdbpath;
     }
 
 

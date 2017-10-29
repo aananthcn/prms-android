@@ -275,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         if (mMode == Mode.ADD_PAT) {
             Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
-                    patmail.getText().toString(), gender, "", "");
+                    patmail.getText().toString(), gender, null, null);
             patientDB.AddPatient(pat);
             Log.d(TAG, "Added patient '" + pat.Name + "'");
         }
@@ -771,14 +771,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         doctorDB.close();
 
         try {
-            File sd = Environment.getExternalStorageDirectory();
             File data  = Environment.getDataDirectory();
 
             if (isExternalStorageWritable()) {
-                String  appDBpath = "/data/" + PACKAGE_NAME
-                        + "/databases/" + MAIN_DATABASE;
-                File out_file = new File(data, appDBpath );
-                //out_file.delete();
+                String  appDBpath = "/data/" + PACKAGE_NAME + "/databases/" + MAIN_DATABASE;
+                File out_file = new File(data, appDBpath);
                 File in_file = new File(merged_filepath);
 
                 FileChannel dst = new FileOutputStream(out_file).getChannel();

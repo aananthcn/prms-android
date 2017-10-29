@@ -54,19 +54,14 @@ public class DoctorDB extends SQLiteOpenHelper{
 
     public void AddDoctor(Doctor doc) {
         SQLiteDatabase db = this.getWritableDatabase();
-
-        AddDoctorToDB(db, doc, null);
+        AddDoctorToDB(db, doc);
         db.close();
     }
 
-    public void AddDoctorToDB(SQLiteDatabase db, Doctor doc, String dbname) {
+    public void AddDoctorToDB(SQLiteDatabase db, Doctor doc) {
         String tablename;
 
-        if (dbname == null)
-            tablename = DOCT_TABLE;
-        else
-            tablename = dbname + "." + DOCT_TABLE; // here dbname is the logical name!!
-
+        tablename = DOCT_TABLE;
         createDoctorTableIfNotExist(db, tablename);
 
         String query = "INSERT INTO " + tablename + " (name, phone, email) VALUES ('"+
@@ -176,26 +171,27 @@ public class DoctorDB extends SQLiteOpenHelper{
     }
 
 
-    public void mergeDoctors(SQLiteDatabase db, String srcdbn, String dstdbn) {
+    public int mergeDoctorsToDB(SQLiteDatabase sdb, SQLiteDatabase ddb) {
         List<Doctor> srcList; // Doctor list from source database
         List<Doctor> dstList; // Doctor list from destination database
 
-        Log.d("DoctorDB", "Entering mergeDoctors()");
-        srcList = GetDoctorListFromDB(db, srcdbn, ListOrder.ASCENDING);
-        dstList = GetDoctorListFromDB(db, dstdbn, ListOrder.ASCENDING);
+        Log.d("DoctorDB", "Entering mergeDoctorsToDB");
+        srcList = GetDoctorListFromDB(sdb, null, ListOrder.ASCENDING);
+        dstList = GetDoctorListFromDB(ddb, null, ListOrder.ASCENDING);
 
         // Check for redundancy and add imported records to destination database
         int count = 0;
         for (Doctor dct : srcList) {
+            if (dct.name.equals("Empty"))
+                continue;
             if (!isDoctorExist(dct, dstList)) {
-                if (dct.name.equals("Empty"))
-                    continue;
-                AddDoctorToDB(db, dct, dstdbn);
-                dstList.add(dct);
+                AddDoctorToDB(ddb, dct);
                 count++;
             }
         }
-        Log.d("DoctorDB", "Added "+count+" treatments to " + dstdbn);
+        Log.d("DoctorDB", "Added "+count+" treatments to " + ddb.getPath());
+
+        return count;
     }
 
 
