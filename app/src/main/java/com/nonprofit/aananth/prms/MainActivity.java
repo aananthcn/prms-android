@@ -21,10 +21,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -90,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
+    private String mSrchstr;
 
 
     @Override
@@ -200,17 +203,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     // Added by Aananth: button handlers
     public void SearchPatNamePhone(View view) {
         EditText srchtxt;
-        String srchstr;
 
         srchtxt = (EditText) findViewById(R.id.search_txt);
 
         Log.d(TAG, "Search patient records");
-        srchstr = srchtxt.getText().toString();
-        patientList = patientDB.GetPatientList(srchstr, ListOrder.REVERSE);
+        mSrchstr = srchtxt.getText().toString();
+        patientList = patientDB.GetPatientList(mSrchstr, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
 
         Button srchbtn = (Button) findViewById(R.id.search_btn);
-        if (srchstr.length() > 0) {
+        if (mSrchstr.length() > 0) {
             srchbtn.setText("Refresh");
         } else {
             srchbtn.setText("Search");
@@ -358,6 +360,31 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 EditPatientRecord();
             }
         }));
+
+        EditText srchBox = (EditText) findViewById(R.id.search_txt);
+        srchBox.setText(mSrchstr);
+        srchBox.invalidate();
+        srchBox.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                boolean handled = false;
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    switch (keyCode)
+                    {
+                        case KeyEvent.KEYCODE_DPAD_CENTER:
+                        case KeyEvent.KEYCODE_ENTER:
+                        case KeyEvent.KEYCODE_SEARCH:
+                            SearchPatNamePhone(v.getRootView());
+                            handled = true;
+                        default:
+                            Log.d(TAG, " setOnKeyListener search patient: unknown key " + keyCode);
+                            break;
+                    }
+                }
+                return handled;
+
+            }
+        });
     }
 
 
@@ -885,6 +912,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     //M O D E   M A N A G E M E N T   F U N C T I O N S
     private void update_mode(Mode mode) {
+        if (mode != Mode.VIEW_PAT) {
+            mSrchstr = ""; // clear the patient search once go out of View Patient mode.
+        }
         mModePrev = mMode;
         mMode = mode;
         Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
@@ -1042,5 +1072,4 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
     }
-
 }

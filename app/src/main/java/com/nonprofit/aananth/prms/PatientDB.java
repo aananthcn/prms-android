@@ -191,10 +191,12 @@ public class PatientDB extends SQLiteOpenHelper{
 
         if (search == null)
             query = "SELECT * FROM " + tablename + " ORDER BY " + PKEY + desc;
-        else
-            query = "SELECT * FROM " +  tablename +
-                            " WHERE name LIKE '%"+search+"%' OR phone LIKE '%"+search+"%'" +
+        else {
+            search = search.replaceAll("[^A-Za-z0-9]", "%");
+            query = "SELECT * FROM " + tablename +
+                    " WHERE name LIKE '%" + search + "%' OR phone LIKE '%" + search + "%'" +
                     " ORDER BY " + PKEY + desc;
+        }
 
         Log.d(TAG, query);
         res = db.rawQuery(query, null);
