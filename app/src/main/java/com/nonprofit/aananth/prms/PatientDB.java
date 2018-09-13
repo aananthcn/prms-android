@@ -233,6 +233,54 @@ public class PatientDB extends SQLiteOpenHelper{
     }
 
 
+    public List<Patient> GetPatientListWith(String complaint, String prescription) {
+        List<Patient> patientList = new ArrayList<>();
+        String name, phone, email, pid, gender, uid, desc;
+        String query, tablename;
+        Patient pat;
+        Cursor res;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        TreatmentDB treatDB = new TreatmentDB(mContext);
+        tablename = PATIENT_LIST;
+
+        query = "SELECT * FROM " + tablename + " ORDER BY " + PKEY;
+        Log.d(TAG, query);
+        res = db.rawQuery(query, null);
+        res.moveToFirst();
+
+        if (res.getCount() <= 0) {
+            Log.d(TAG, "Query on database '" + db.getPath() + "' returned 0 elements!");
+            pat = new Patient("Empty", "", "", "", "", "");
+            patientList.add(pat);
+
+            res.close();
+            return patientList;
+        }
+
+        Log.d(TAG, "Number of patients = "+res.getCount());
+        while(!res.isAfterLast()){
+            name = res.getString(res.getColumnIndex("name"));
+            phone = res.getString(res.getColumnIndex("phone"));
+            email = res.getString(res.getColumnIndex("email"));
+            gender = res.getString(res.getColumnIndex("gender"));
+            uid = res.getString(res.getColumnIndex("uid"));
+            pid = res.getString(res.getColumnIndex(PKEY));
+
+
+            //Log.d(TAG, "Name = "+ name + ", Phone: "+phone+", Email = "+email);
+            pat = new Patient(name, phone, email, gender, pid, uid);
+            if (treatDB.TreatmentCheck(db, pat, complaint, prescription) == true) {
+                patientList.add(pat);
+            }
+
+            res.moveToNext();
+        }
+
+        res.close();
+        return patientList;
+    }
+
     private boolean isTableExists(SQLiteDatabase db, String tableName)
     {
         if (tableName == null || db == null) {

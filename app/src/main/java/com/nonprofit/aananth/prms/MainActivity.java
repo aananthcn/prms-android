@@ -26,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -47,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static android.provider.AlarmClock.EXTRA_MESSAGE;
 import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 
@@ -541,12 +541,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             case R.id.add_doctor:
                 AddNewDoctor();
                 return true;
+            case R.id.complaint_search:
+                SwitchToSearchActivity("complaint search");
+                return true;
+            case R.id.prescription_search:
+                SwitchToSearchActivity("prescription search");
+                return true;
             case R.id.statistics_pat:
                 ShowPatientStatistics();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void SwitchToSearchActivity(String searchType) {
+        Intent intent = new Intent(this, SearchActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, searchType);
+        startActivity(intent);
     }
 
     public void ShowPatientStatistics() {

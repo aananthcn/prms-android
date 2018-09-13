@@ -9,6 +9,12 @@
         android:id="@+id/import_db"
         android:title="Import Database" />
     <item
+        android:id="@+id/complaint_search"
+        android:title="Search Complaints" />
+    <item
+        android:id="@+id/prescription_search"
+        android:title="Search Prescriptions" />
+    <item
         android:id="@+id/statistics_pat"
         android:title="Patients Statistics" />
 </menu>

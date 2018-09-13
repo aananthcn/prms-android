@@ -198,6 +198,56 @@ public class TreatmentDB extends SQLiteOpenHelper {
     }
 
 
+    public boolean TreatmentCheck(SQLiteDatabase db, Patient pat, String compl, String presc) {
+        Cursor res = null;
+        String tablename, query;
+        Boolean treatment_found = false;
+
+        Log.d(TAG, "GetTreatmentListFromdDB(): dbname = " + db.getPath());
+        tablename = pat.Uid;
+
+        // check if treatment table exists in the current input database
+        query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tablename + "'";
+        res = db.rawQuery(query, null);
+        if ((res == null) || (res.getCount() <= 0)) {
+            Log.d(TAG, "Treatment table " + tablename + " doesn't exist for " + pat.Name + "!");
+            res.close();
+            return false;
+        }
+        res.close();
+
+        // read all matching treatments for this patient from this input database
+        if (presc == null) {
+            compl = compl.replaceAll("[^A-Za-z0-9]", "%");
+            query = "SELECT * FROM " + tablename + " WHERE complaint LIKE '%" + compl + "%'";
+        }
+        else if (compl == null) {
+            presc = presc.replaceAll("[^A-Za-z0-9]", "%");
+            query = "SELECT * FROM " + tablename + " WHERE prescription LIKE '%" + presc + "%'";
+        }
+        else {
+            compl = compl.replaceAll("[^A-Za-z0-9]", "%");
+            presc = presc.replaceAll("[^A-Za-z0-9]", "%");
+            query = "SELECT * FROM " + tablename + " WHERE complaint LIKE '%" + compl +
+                    "%' OR prescription LIKE '%" + presc + "%'";
+        }
+        Log.d(TAG, query);
+        res = db.rawQuery(query, null);
+
+        res.moveToFirst();
+        if (res.getCount() <= 0) {
+            Log.d(TAG, "No treatment found for this patient: " + pat.Name + "!");
+            treatment_found = false;
+        }
+        else {
+            treatment_found = true;
+        }
+        res.close();
+
+        return treatment_found;
+    }
+
+
     public int mergeTreatmentsToDB(Patient pat, SQLiteDatabase sdb, SQLiteDatabase ddb) {
         List<Treatment> srcList; // Treatment list from source database
         List<Treatment> dstList; // Treatment list from destination database
