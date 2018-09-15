@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private Doctor mDoctor;
     private DoctorDB doctorDB;
     private List<Doctor> mDocList;
-    private EditText user, patname, patphone, patmail;
     Spinner spinner;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
@@ -86,9 +85,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<Patient> mPatientList;
     private Patient mCurrPatient;
     private PatientDB patientDB;
-    //private TreatRecyclerAdapter mTreatRcAdapter;
-    //private List<Treatment> treatmentList;
-    //private Treatment mCurrTreatment;
     private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
@@ -186,19 +182,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    /*
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Log.d(TAG, "Layout set to current layout");
-        //mPatientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
-        //renderPatRecycleView(mPatientList);
-        refreshPatRecycleView();
-        update_mode(Mode.VIEW_PAT);
-    }
-    */
-
-
     // Added by Aananth: button handlers
     public void SearchPatNamePhone(View view) {
         EditText srchtxt;
@@ -227,108 +210,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         startActivity(intent);
     }
 
-    /*
-    public void AddNewPatient(View view) {
-        currLayout = R.layout.add_edit_pat;
-        setContentView(currLayout);
-        setTitle("Add patient");
-        Log.d(TAG, "AddNewPatient()");
-
-        Button delbtn = (Button) findViewById(R.id.pat_del);
-        delbtn.setVisibility(View.INVISIBLE);
-        update_mode(Mode.ADD_PAT);
-    }
-
-    public void EditPatientRecord() {
-        update_mode(Mode.UPDATE_PAT);
-        currLayout = R.layout.add_edit_pat;
-        setContentView(currLayout);
-        setTitle("Update patient");
-        Log.d(TAG, "EditPatientRecord()");
-
-        patname = (EditText) findViewById(R.id.fullName);
-        patname.setText(mCurrPatient.Name);
-        patphone = (EditText) findViewById(R.id.phoneNo);
-        patphone.setText(mCurrPatient.Phone);
-        patmail = (EditText) findViewById(R.id.emailID);
-        patmail.setText(mCurrPatient.Email);
-        if (mCurrPatient.Gender.equalsIgnoreCase("Male")) {
-            RadioButton gender = (RadioButton) findViewById(R.id.radioMale);
-            gender.setChecked(true);
-        }
-        else {
-            RadioButton gender = (RadioButton) findViewById(R.id.radioFemale);
-            gender.setChecked(true);
-        }
-
-        Button patsav = (Button) findViewById(R.id.pat_save);
-        patsav.setText("Update");
-        Button patback = (Button) findViewById(R.id.pat_back);
-        patback.setText("Cancel");
-    }
-
-    public void SavePatientRecord(View view) {
-        String gender;
-        RadioButton patgender;
-
-        Log.d(TAG, "SavePatientRecord()");
-        patname = (EditText)findViewById(R.id.fullName);
-        patphone = (EditText)findViewById(R.id.phoneNo);
-        patmail = (EditText)findViewById(R.id.emailID);
-        patgender = (RadioButton)findViewById(R.id.radioMale);
-
-        if (patname.getText().toString().length() == 0) {
-            myOnBackPressed();
-            return;
-        }
-
-        if (patgender.isChecked())
-            gender = "Male";
-        else
-            gender = "Female";
-
-        if (mMode == Mode.ADD_PAT) {
-            Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
-                    patmail.getText().toString(), gender, null, null);
-            patientDB.AddPatient(pat);
-            Log.d(TAG, "Added patient '" + pat.Name + "'");
-        }
-        else if (mMode == Mode.UPDATE_PAT) {
-            Patient pat = new Patient(patname.getText().toString(), patphone.getText().toString(),
-                    patmail.getText().toString(), gender, mCurrPatient.Pid, mCurrPatient.Uid);
-            patientDB.UpdatePatient(pat);
-            Log.d(TAG, " Updated patient '" + pat.Name + "'");
-        }
-        myOnBackPressed();
-    }
-
-    public void CancelPatientRecordEdit(View view) {
-        Log.d(TAG, "CancelPatientRecordEdit()");
-        myOnBackPressed();
-    }
-
-    public void DeleteCurrPatient(View view) {
-        Log.d(TAG, "DeleteCurrPatient()");
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Are you sure to delete this patient?");
-        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User clicked ok button
-                        patientDB.DeletePatient(mCurrPatient);
-                        myOnBackPressed();
-                    }
-                });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                        myOnBackPressed();
-                    }
-                });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-    */
 
     // interface class
     public static abstract class ClickListener{
@@ -536,6 +417,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         spinner.setAdapter(dataAdapter);
     }
 
+
     public void AddNewDoctor() {
         currLayout = R.layout.add_edit_doc;
         setContentView(currLayout);
@@ -543,6 +425,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         del.setVisibility(View.INVISIBLE);
         update_mode(Mode.ADD_DOCT);
     }
+
 
     public void SaveDocRecord(View view) {
         EditText docName, docPhone, docEmail;
@@ -561,6 +444,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         myOnBackPressed();
     }
+
 
     public void DeleteCurrDoc(View view) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -592,9 +476,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     //M O D E   M A N A G E M E N T   F U N C T I O N S
     private void update_mode(Mode mode) {
-        //if (mode != Mode.VIEW_PAT) {
-        //    mSrchstr = ""; // clear the patient search once go out of View Patient mode.
-        //}
         mModePrev = mMode;
         mMode = mode;
         Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
@@ -659,13 +540,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
            update_mode(Mode.LOGIN);
        }
        else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
-           //if (mModePrev == Mode.UPDATE_PAT) {
-           //    EditPatientRecord();
-           //}
-           //else {
-               //renderPatientview();
-               refreshPatRecycleView();
-           //}
+           //renderPatientview();
+           refreshPatRecycleView();
        }
        else {
            //renderPatientview();
@@ -688,10 +564,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked ok button
-                /*if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
-                    SavePatientRecord(findViewById(android.R.id.content));
-                }
-                else */
                 if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
                     SaveDocRecord(findViewById(android.R.id.content));
                 }

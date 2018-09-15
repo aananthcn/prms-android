@@ -45,8 +45,6 @@ public class PatientAddEditActivity extends AppCompatActivity {
     }
 
     public void AddNewPatient() {
-        //currLayout = R.layout.add_edit_pat;
-        //setContentView(currLayout);
         setTitle("Add patient");
         Log.d(TAG, "AddNewPatient()");
 
@@ -58,8 +56,6 @@ public class PatientAddEditActivity extends AppCompatActivity {
     public void EditPatientRecord() {
         EditText patname, patphone, patmail;
         update_mode(Mode.UPDATE_PAT);
-        //currLayout = R.layout.add_edit_pat;
-        //setContentView(currLayout);
         setTitle("Update patient");
         Log.d(TAG, "EditPatientRecord()");
 
@@ -126,7 +122,6 @@ public class PatientAddEditActivity extends AppCompatActivity {
     public void CancelPatientRecordEdit(View view) {
         Log.d(TAG, "CancelPatientRecordEdit()");
         this.onBackPressed();
-        //myOnBackPressed();
     }
 
     public void DeleteCurrPatient(View view) {
@@ -138,26 +133,18 @@ public class PatientAddEditActivity extends AppCompatActivity {
                 // User clicked ok button
                 mPatientDB.DeletePatient(mCurrPatient);
                 PatientAddEditActivity.this.onBackPressed();
-                //myOnBackPressed();
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User cancelled the dialog
                 PatientAddEditActivity.this.onBackPressed();
-                //myOnBackPressed();
             }
         });
 
         AlertDialog dialog = builder.create();
         dialog.show();
     }
-
-    // interface class
-    //public static abstract class ClickListener{
-    //    public abstract void onClick(View view, int position);
-    //    public abstract void onLongClick(View view, int position);
-    //}
 
 
     private void update_mode(Mode mode) {
