@@ -116,6 +116,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
     public List<Treatment> GetTreatmentList(Patient pat, ListOrder order) {
         SQLiteDatabase db = this.getWritableDatabase();
+        Log.d(TAG, "GetTreatmentList()");
         List<Treatment> list = GetTreatmentListFromDB(db, pat, order);
 
         db.close();

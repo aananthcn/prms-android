@@ -345,6 +345,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             @Override
             public void onClick(View view, final int position) {
                 // show patient history view
+                Log.d(TAG, "onClick()");
                 mCurrPatient = patlist.get(position);
                 if (!mCurrPatient.Name.equals("Empty")) {
                     treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
@@ -388,6 +389,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
+    // T R E A T M E N T   R E L A T E D   F U N C T I O N S
     public void renderTreatRecycleView(final List<Treatment> treatlist) {
         // set treatment list layout
         currLayout = R.layout.treatments;
@@ -558,6 +560,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private void SwitchToSearchActivity(String searchType) {
         Intent intent = new Intent(this, SearchActivity.class);
         intent.putExtra(EXTRA_MESSAGE, searchType);
+        intent.putExtra("doctor", mDoctor);
         startActivity(intent);
     }
 
@@ -991,7 +994,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    public void myOnBackPressed() {
+    private void myOnBackPressed() {
        if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
            currLayout = R.layout.login;
            setContentView(currLayout);

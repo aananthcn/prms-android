@@ -1,10 +1,12 @@
 package com.nonprofit.aananth.prms;
 
+import java.io.Serializable;
+
 /**
  * Created by aananth on 14/05/17.
  */
 
-public class Doctor {
+public class Doctor implements Serializable {
     public String name;
     public String phone;
     public String email;

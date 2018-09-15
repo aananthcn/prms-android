@@ -1,5 +1,6 @@
 package com.nonprofit.aananth.prms;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -7,7 +8,7 @@ import java.util.Date;
  * Created by aananth on 06/05/17.
  */
 
-public class Treatment {
+public class Treatment implements Serializable {
     Patient patient;
     String date;
     String complaint;

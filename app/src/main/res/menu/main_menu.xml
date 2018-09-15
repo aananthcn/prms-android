@@ -3,12 +3,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/export_db"
-        android:title="Export Database" />
-    <item
-        android:id="@+id/import_db"
-        android:title="Import Database" />
-    <item
         android:id="@+id/complaint_search"
         android:title="Search Complaints" />
     <item
@@ -17,4 +11,10 @@
     <item
         android:id="@+id/statistics_pat"
         android:title="Patients Statistics" />
+    <item
+        android:id="@+id/export_db"
+        android:title="Export Database" />
+    <item
+        android:id="@+id/import_db"
+        android:title="Import Database" />
 </menu>

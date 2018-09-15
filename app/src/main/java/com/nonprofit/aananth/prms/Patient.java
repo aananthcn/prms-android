@@ -2,13 +2,14 @@ package com.nonprofit.aananth.prms;
 
 import android.util.Log;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * Created by aananth on 09/04/17.
  */
 
-public class Patient {
+public class Patient implements Serializable {
     String Name;
     String Phone;
     String Email;

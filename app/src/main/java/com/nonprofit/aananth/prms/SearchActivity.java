@@ -12,7 +12,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import java.util.List;
 
@@ -27,9 +26,10 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private String TAG = "PRMS-SearchActivity";
-    private List<Patient> patientList;
-    private PatientDB patientDB;
+    private List<Patient> mPatientList;
+    private PatientDB mPatientDB;
     private Patient mCurrPatient;
+    private Doctor mDoctor;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private PatRecyclerAdapter mPatRcAdapter;
@@ -42,14 +42,14 @@ public class SearchActivity extends AppCompatActivity {
         setContentView(R.layout.complaint_search);
 
         //do basic initialization of objects
-        patientDB = new PatientDB(this);
+        mPatientDB = new PatientDB(this);
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
         String message = intent.getStringExtra(EXTRA_MESSAGE);
+        mDoctor = (Doctor) intent.getSerializableExtra("doctor");
 
         final EditText srchBox = (EditText) findViewById(R.id.search_txt);
-        //srchBox.invalidate();
         srchBox.setHint(findSearchType(message));
         srchBox.setOnKeyListener(new View.OnKeyListener() {
             @Override
@@ -107,20 +107,20 @@ public class SearchActivity extends AppCompatActivity {
 
     private void SearchPatientsTreatedWith(String prescription) {
         Log.d(TAG, "Search patient records for prescription");
-        patientList = patientDB.GetPatientListWith(null, prescription);
-        renderPatRecycleView(patientList);
+        mPatientList = mPatientDB.GetPatientListWith(null, prescription);
+        renderPatRecycleView();
         hideKeyboard();
     }
 
     private void SearchPatientsWithComplaint(String complaint) {
         Log.d(TAG, "Search patient records for complaints");
-        patientList = patientDB.GetPatientListWith(complaint, null);
-        renderPatRecycleView(patientList);
+        mPatientList = mPatientDB.GetPatientListWith(complaint, null);
+        renderPatRecycleView();
         hideKeyboard();
     }
 
 
-    public void renderPatRecycleView(final List<Patient> patlist) {
+    public void renderPatRecycleView() {
         mRecyclerView = (RecyclerView) findViewById(R.id.pat_rv);
         if (mRecyclerView == null) {
             Log.d(TAG, "renderPatRecycleView: mRecylerView is null!!");
@@ -128,7 +128,7 @@ public class SearchActivity extends AppCompatActivity {
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mPatRcAdapter = new PatRecyclerAdapter(patientList);
+        mPatRcAdapter = new PatRecyclerAdapter(mPatientList);
         mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
         mRecyclerView.setAdapter(mPatRcAdapter);
 
@@ -138,19 +138,24 @@ public class SearchActivity extends AppCompatActivity {
                 mRecyclerView, new MainActivity.ClickListener() {
             @Override
             public void onClick(View view, final int position) {
+                if (mPatientList.isEmpty()) {
+                    Log.d(TAG, "mPatientList Empty!");
+                    return;
+                }
+
                 // show patient history view
-                mCurrPatient = patlist.get(position);
+                mCurrPatient = mPatientList.get(position);
                 if (!mCurrPatient.Name.equals("Empty")) {
-                    //treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
-                    //renderTreatRecycleView(treatmentList);
+                    Intent intent = new Intent(SearchActivity.this, TreatmentViewActivity.class);
+                    intent.putExtra("patient", mCurrPatient);
+                    intent.putExtra("doctor", mDoctor);
+                    startActivity(intent);
                 }
             }
 
             @Override
             public void onLongClick(View view, int position) {
-                // edit patient data
-                mCurrPatient = patlist.get(position);
-                //EditPatientRecord();
+                // do nothing while searching!s
             }
         }));
     }
