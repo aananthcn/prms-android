@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public enum Mode {
         LOGIN,
         VIEW_PAT, ADD_PAT, UPDATE_PAT,
-        VIEW_TREAT, ADD_TREAT, UPDATE_TREAT,
         VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,
         VIEW_PAT_STAT, MAX_MODE
     }
@@ -189,15 +188,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(TAG, "Layout set to current layout");
-        if (mMode == Mode.VIEW_TREAT) {
-            treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
-            renderTreatRecycleView(treatmentList);
-        }
-        else {
-            patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
-            renderPatRecycleView(patientList);
-            update_mode(Mode.VIEW_PAT);
-        }
+        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+        renderPatRecycleView(patientList);
+        update_mode(Mode.VIEW_PAT);
     }
 
     // Added by Aananth: button handlers
@@ -348,10 +341,18 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 Log.d(TAG, "onClick()");
                 mCurrPatient = patlist.get(position);
                 if (!mCurrPatient.Name.equals("Empty")) {
+                    Intent intent = new Intent(MainActivity.this, TreatmentViewActivity.class);
+                    intent.putExtra("patient", mCurrPatient);
+                    intent.putExtra("doctor", mDoctor);
+                    startActivity(intent);
+                }
+                /*
+                if (!mCurrPatient.Name.equals("Empty")) {
                     treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
                     renderTreatRecycleView(treatmentList);
                     update_mode(Mode.VIEW_TREAT);
                 }
+                */
             }
 
             @Override
@@ -389,137 +390,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    // T R E A T M E N T   R E L A T E D   F U N C T I O N S
-    public void renderTreatRecycleView(final List<Treatment> treatlist) {
-        // set treatment list layout
-        currLayout = R.layout.treatments;
-        setContentView(currLayout);
-        setTitle(treatlist.get(0).patient.Name+"'s history");
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.treat_rv);
-        if (mRecyclerView == null) {
-            Log.d(TAG, "renderTreatRecycleView: mRecylerView is null!!");
-            return;
-        }
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mTreatRcAdapter = new TreatRecyclerAdapter(treatlist);
-        mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
-        mRecyclerView.setAdapter(mTreatRcAdapter);
-
-        mTreatRcAdapter.notifyDataSetChanged();
-
-        mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
-                mRecyclerView, new ClickListener() {
-            @Override
-            public void onClick(View view, final int position) {
-                // share treatment
-                mCurrTreatment = treatlist.get(position);
-                registerForContextMenu(view);
-                openContextMenu(view);
-                view.showContextMenu();
-                unregisterForContextMenu(view);
-            }
-
-            @Override
-            public void onLongClick(View view, int position) {
-                // edit treatment
-                mCurrTreatment = treatlist.get(position);
-                EditTreatmentRecord();
-            }
-        }));
-    }
-
-    public void AddNewTreatment(View view) {
-        currLayout = R.layout.add_edit_treat;
-        setContentView(currLayout);
-
-        String title = "New treatment for " + mCurrPatient.Name;
-        setTitle(title);
-        update_mode(Mode.ADD_TREAT);
-
-        // Add date according to the format defined in Treatment class
-        Treatment treat = new Treatment(null, null, null, null, null);
-        EditText date = (EditText) findViewById(R.id.treat_date);
-        date.setText(treat.date);
-    }
-
-    public void SaveTreatmentRecord(View view) {
-        EditText comp, pres, date;
-
-        comp = (EditText)findViewById(R.id.complaint);
-        pres = (EditText)findViewById(R.id.prescription);
-        date = (EditText)findViewById(R.id.treat_date);
-
-        if (comp.getText().toString().length() == 0 && pres.getText().toString().length() == 0) {
-            myOnBackPressed();
-            return;
-        }
-
-        if (mMode == Mode.ADD_TREAT) {
-            Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
-                    pres.getText().toString(), mDoctor.name );
-            treatmentDB.AddTreatment(treat);
-            Log.d(TAG, "Added treatment for " + treat.patient.Name);
-        }
-        else if (mMode == Mode.UPDATE_TREAT) {
-            Treatment treat = new Treatment(mCurrPatient, mCurrTreatment.tid,
-                    comp.getText().toString(), pres.getText().toString(), mDoctor.name);
-            treat.date = date.getText().toString();
-            treatmentDB.UpdateTreatment(treat);
-            Log.d(TAG, "Updated treatment for " + treat.patient.Name);
-        }
-
-        myOnBackPressed();
-    }
-
-    public void EditTreatmentRecord() {
-        currLayout = R.layout.add_edit_treat;
-        setContentView(currLayout);
-
-        String title = "Update treatment for " + mCurrPatient.Name;
-        setTitle(title);
-        update_mode(Mode.UPDATE_TREAT);
-
-        EditText compl = (EditText) findViewById(R.id.complaint);
-        compl.setText(mCurrTreatment.complaint);
-        EditText pres = (EditText) findViewById(R.id.prescription);
-        pres.setText(mCurrTreatment.prescription);
-        EditText date = (EditText) findViewById(R.id.treat_date);
-        date.setText(mCurrTreatment.date);
-
-        Button  savupd = (Button) findViewById(R.id.treat_sav_upd);
-        savupd.setText("Update");
-        Button  cancdel = (Button) findViewById(R.id.treat_canc_del);
-        cancdel.setText("Delete");
-    }
-
-    public void CancDelTreatmentEdit(View view) {
-        // print delete option if in update treatment mode!!
-        if (mMode == Mode.UPDATE_TREAT) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Are you sure to delete this treatment?");
-            builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    // User clicked ok button
-                    treatmentDB.DeleteTreatment(mCurrTreatment);
-                    myOnBackPressed();
-                }
-            });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    // User cancelled the dialog
-                    myOnBackPressed();
-                }
-            });
-
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-        else {
-            myOnBackPressed();
-        }
-    }
 
     // M E N U   H A N D L I N G
     @Override
@@ -597,52 +467,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         female_pat_v.setText(String.format("%.2f", (100.0 * (total_pat - males))/total_pat) + "% Females");
         top_pat_v.setText(String.format("%s", top_pat.Name) + " is the Top Patient with " +
                 String.format("%d", max_treats) + " visits");
-    }
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.share_menu, menu);
-        menu.setHeaderTitle("Share Treatment");
-    }
-
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        switch(item.getItemId()) {
-            case R.id.share_whatsapp:
-                Intent wtspIntent = new Intent(Intent.ACTION_SEND);
-                wtspIntent.setType("text/plain");
-                wtspIntent.setPackage("com.whatsapp");
-                wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Date*: "+ mCurrTreatment.date
-                        + "\n\n*Patient:* "+ mCurrTreatment.patient.Name
-                        + "\n\n*Complaint*: "+ mCurrTreatment.complaint
-                        + "\n\n*Prescription*: "+ mCurrTreatment.prescription);
-                try {
-                    this.startActivity(wtspIntent);
-                } catch (android.content.ActivityNotFoundException ex) {
-                    Toast.makeText(getBaseContext(), "WhatsApp have not been installed.",
-                            Toast.LENGTH_SHORT).show();
-                }
-                return true;
-            case R.id.share_sms:
-                Intent smsIntent = new Intent(Intent.ACTION_VIEW);
-                smsIntent.setType("vnd.android-dir/mms-sms");
-                smsIntent.putExtra("address", mCurrTreatment.patient.Phone);
-                smsIntent.putExtra("sms_body", mCurrTreatment.prescription);
-                try {
-                    this.startActivity(smsIntent);
-                } catch (android.content.ActivityNotFoundException ex) {
-                    Toast.makeText(getBaseContext(), "Couldn't send SMS",
-                            Toast.LENGTH_SHORT).show();
-                }
-                return true;
-            default:
-                return super.onContextItemSelected(item);
-        }
     }
 
     // D A T A B A S E   E X P O R T   /   I M P O R T   O P E R A T I O N S
@@ -945,10 +769,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, mMenu);
         getDynamicFilePermission();
-
-        //TODO: setup Google Drive
-        //mDrive.connectToGoogleDrive(this);
-        //Log.d(TAG, "Successful login");
     }
 
     public void doDatabaseBackup(String backupfile, boolean force) {
@@ -981,12 +801,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    public void renderTreatmentView() {
-        treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
-        renderTreatRecycleView(treatmentList);
-        update_mode(Mode.VIEW_TREAT);
-    }
-
     public void renderPatientview() {
         patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
         renderPatRecycleView(patientList);
@@ -1002,21 +816,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
            update_mode(Mode.LOGIN);
        }
        else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
-           if (mModePrev == Mode.UPDATE_TREAT) {
-               EditTreatmentRecord();
-           }
-           else if (mModePrev == Mode.VIEW_TREAT || mModePrev == Mode.ADD_TREAT) {
-               renderTreatmentView();
-           }
-           else if (mModePrev == Mode.UPDATE_PAT) {
+           if (mModePrev == Mode.UPDATE_PAT) {
                EditPatientRecord();
            }
            else {
                renderPatientview();
            }
-       }
-       else if (mMode == Mode.UPDATE_TREAT || mMode == Mode.ADD_TREAT) {
-           renderTreatmentView();
        }
        else {
            renderPatientview();
@@ -1025,8 +830,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     public void QueryBeforeHandleBackPress() {
 
-        if ((mMode != Mode.ADD_TREAT) && (mMode != Mode.UPDATE_TREAT) &&
-                (mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
+        if ((mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
                 (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
             myOnBackPressed();
             return;
@@ -1038,10 +842,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked ok button
-                if ((mMode == Mode.ADD_TREAT) || (mMode == Mode.UPDATE_TREAT)) {
-                    SaveTreatmentRecord(findViewById(android.R.id.content));
-                }
-                else if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
+                if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
                     SavePatientRecord(findViewById(android.R.id.content));
                 }
                 else if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {

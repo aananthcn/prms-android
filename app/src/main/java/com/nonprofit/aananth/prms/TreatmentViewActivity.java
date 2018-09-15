@@ -6,7 +6,12 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Toast;
 
 import java.io.Serializable;
 import java.util.List;
@@ -121,6 +126,51 @@ public class TreatmentViewActivity extends AppCompatActivity implements Serializ
             mTreatRcAdapter.notifyDataSetChanged();
             mRcVwUpdateNeeded = false;
         }
+    }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.share_menu, menu);
+        menu.setHeaderTitle("Share Treatment");
+    }
+
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        switch(item.getItemId()) {
+            case R.id.share_whatsapp:
+                Intent wtspIntent = new Intent(Intent.ACTION_SEND);
+                wtspIntent.setType("text/plain");
+                wtspIntent.setPackage("com.whatsapp");
+                wtspIntent.putExtra(Intent.EXTRA_TEXT, "*Date*: "+ mCurrTreatment.date
+                        + "\n\n*Patient:* "+ mCurrTreatment.patient.Name
+                        + "\n\n*Complaint*: "+ mCurrTreatment.complaint
+                        + "\n\n*Prescription*: "+ mCurrTreatment.prescription);
+                try {
+                    this.startActivity(wtspIntent);
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(getBaseContext(), "WhatsApp have not been installed.",
+                            Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            case R.id.share_sms:
+                Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                smsIntent.setType("vnd.android-dir/mms-sms");
+                smsIntent.putExtra("address", mCurrTreatment.patient.Phone);
+                smsIntent.putExtra("sms_body", mCurrTreatment.prescription);
+                try {
+                    this.startActivity(smsIntent);
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(getBaseContext(), "Couldn't send SMS",
+                            Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 }
