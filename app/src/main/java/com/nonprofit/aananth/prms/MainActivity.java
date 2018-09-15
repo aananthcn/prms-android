@@ -3,6 +3,7 @@ package com.nonprofit.aananth.prms;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,12 +21,12 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -61,9 +62,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     // Aananth added this
     public enum Mode {
         LOGIN,
-        VIEW_PAT, ADD_PAT, UPDATE_PAT,
+        VIEW_PAT, /* ADD_PAT, UPDATE_PAT */
         VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,
-        VIEW_PAT_STAT, MAX_MODE
+        MAX_MODE
     }
     public static String PACKAGE_NAME;
     public static final int CREATE_FILE = 101;
@@ -82,16 +83,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private PatRecyclerAdapter mPatRcAdapter;
-    private List<Patient> patientList;
+    private List<Patient> mPatientList;
     private Patient mCurrPatient;
     private PatientDB patientDB;
-    private TreatRecyclerAdapter mTreatRcAdapter;
-    private List<Treatment> treatmentList;
-    private Treatment mCurrTreatment;
+    //private TreatRecyclerAdapter mTreatRcAdapter;
+    //private List<Treatment> treatmentList;
+    //private Treatment mCurrTreatment;
     private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
     private String mSrchstr;
+    private Boolean initialPatRenderingDone = false;
 
 
     @Override
@@ -165,8 +167,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         switch (requestCode) {
             case MY_PERMISSION_REQUEST: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
@@ -184,25 +186,28 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
+    /*
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(TAG, "Layout set to current layout");
-        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
-        renderPatRecycleView(patientList);
+        //mPatientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+        //renderPatRecycleView(mPatientList);
+        refreshPatRecycleView();
         update_mode(Mode.VIEW_PAT);
     }
+    */
+
 
     // Added by Aananth: button handlers
     public void SearchPatNamePhone(View view) {
         EditText srchtxt;
 
         srchtxt = (EditText) findViewById(R.id.search_txt);
-
-        Log.d(TAG, "Search patient records");
         mSrchstr = srchtxt.getText().toString();
-        patientList = patientDB.GetPatientList(mSrchstr, ListOrder.REVERSE);
-        renderPatRecycleView(patientList);
+
+        Log.d(TAG, "SearchPatNamePhone(\"" + mSrchstr + "\")");
+        refreshPatRecycleView();
 
         Button srchbtn = (Button) findViewById(R.id.search_btn);
         if (mSrchstr.length() > 0) {
@@ -210,12 +215,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else {
             srchbtn.setText("Search");
         }
+
+        hideKeyboard();
     }
 
+
+    public void AddNewPatient(View view) {
+        Intent intent = new Intent(this, PatientAddEditActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, "add patient");
+        intent.putExtra("patient", mCurrPatient);
+        startActivity(intent);
+    }
+
+    /*
     public void AddNewPatient(View view) {
         currLayout = R.layout.add_edit_pat;
         setContentView(currLayout);
         setTitle("Add patient");
+        Log.d(TAG, "AddNewPatient()");
 
         Button delbtn = (Button) findViewById(R.id.pat_del);
         delbtn.setVisibility(View.INVISIBLE);
@@ -227,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         currLayout = R.layout.add_edit_pat;
         setContentView(currLayout);
         setTitle("Update patient");
+        Log.d(TAG, "EditPatientRecord()");
 
         patname = (EditText) findViewById(R.id.fullName);
         patname.setText(mCurrPatient.Name);
@@ -234,7 +252,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         patphone.setText(mCurrPatient.Phone);
         patmail = (EditText) findViewById(R.id.emailID);
         patmail.setText(mCurrPatient.Email);
-        if (mCurrPatient.Gender == "Male") {
+        if (mCurrPatient.Gender.equalsIgnoreCase("Male")) {
             RadioButton gender = (RadioButton) findViewById(R.id.radioMale);
             gender.setChecked(true);
         }
@@ -253,6 +271,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String gender;
         RadioButton patgender;
 
+        Log.d(TAG, "SavePatientRecord()");
         patname = (EditText)findViewById(R.id.fullName);
         patphone = (EditText)findViewById(R.id.phoneNo);
         patmail = (EditText)findViewById(R.id.emailID);
@@ -284,10 +303,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     public void CancelPatientRecordEdit(View view) {
+        Log.d(TAG, "CancelPatientRecordEdit()");
         myOnBackPressed();
     }
 
     public void DeleteCurrPatient(View view) {
+        Log.d(TAG, "DeleteCurrPatient()");
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Are you sure to delete this patient?");
         builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
@@ -307,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+    */
 
     // interface class
     public static abstract class ClickListener{
@@ -319,6 +341,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         currLayout = R.layout.patients;
         setContentView(currLayout);
         setTitle("Patient List");
+        Log.d(TAG, "renderPatRecycleView()");
 
         mRecyclerView = (RecyclerView) findViewById(R.id.pat_rv);
         if (mRecyclerView == null) {
@@ -327,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mPatRcAdapter = new PatRecyclerAdapter(patientList);
+        mPatRcAdapter = new PatRecyclerAdapter(mPatientList);
         mRecyclerView.addItemDecoration(new DividerItemDecorator(this, LinearLayoutManager.VERTICAL));
         mRecyclerView.setAdapter(mPatRcAdapter);
 
@@ -346,22 +369,20 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     intent.putExtra("doctor", mDoctor);
                     startActivity(intent);
                 }
-                /*
-                if (!mCurrPatient.Name.equals("Empty")) {
-                    treatmentList = treatmentDB.GetTreatmentList(mCurrPatient, ListOrder.REVERSE);
-                    renderTreatRecycleView(treatmentList);
-                    update_mode(Mode.VIEW_TREAT);
-                }
-                */
             }
 
             @Override
             public void onLongClick(View view, int position) {
                 // edit patient data
                 mCurrPatient = patlist.get(position);
-                EditPatientRecord();
+                //EditPatientRecord();
+                Intent intent = new Intent(MainActivity.this, PatientAddEditActivity.class);
+                intent.putExtra(EXTRA_MESSAGE, "update patient");
+                intent.putExtra("patient", mCurrPatient);
+                startActivity(intent);
             }
         }));
+        initialPatRenderingDone = true;
 
         EditText srchBox = (EditText) findViewById(R.id.search_txt);
         srchBox.setText(mSrchstr);
@@ -387,6 +408,61 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             }
         });
+    }
+
+
+    public void refreshPatRecycleView() {
+        if (!initialPatRenderingDone) {
+            return;
+        }
+
+        //setContentView(R.layout.patients);
+        setTitle("Patients List");
+        Log.d(TAG, "refreshPatRecycleView()");
+
+        mPatientList.clear();
+        mPatientList.addAll(patientDB.GetPatientList(mSrchstr, ListOrder.REVERSE));
+        mPatRcAdapter.notifyDataSetChanged();
+        update_mode(Mode.VIEW_PAT);
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Log.d(TAG, "onResume()");
+        refreshPatRecycleView();
+    }
+
+
+    //   P A T I E N T   S T A T I S T I C S
+    public void ShowPatientStatistics() {
+        List<Treatment> tlist;
+        int max_treats, males, total_pat;
+        Patient top_pat;
+
+        males = max_treats = 0;
+        total_pat = mPatientList.size();
+        top_pat = mCurrPatient;
+
+        for (Patient pat: mPatientList) {
+            if (pat.Gender.equals("Male")) {
+                males++;
+            }
+            tlist = treatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
+            if (tlist.size() > max_treats) {
+                top_pat = pat;
+                max_treats = tlist.size();
+            }
+        }
+
+        PatStatistics pstat = new PatStatistics(total_pat, males,
+                (total_pat - males), top_pat.Name, max_treats);
+
+        Intent intent = new Intent(this, PatStatisticsActivity.class);
+        intent.putExtra("patient statistics", pstat);
+        startActivity(intent);
     }
 
 
@@ -434,40 +510,235 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         startActivity(intent);
     }
 
-    public void ShowPatientStatistics() {
-        List<Treatment> tlist;
-        int max_treats, males, total_pat;
-        Patient top_pat;
 
-        update_mode(Mode.VIEW_PAT_STAT);
-        setContentView(R.layout.statistics_pat);
+    // D O C T O R   H A N D L I N G
+    private void setupDoctorLoginSpinner() {
+        // Welcome message
+        TextView tv = (TextView) findViewById(R.id.message_txt);
+        tv.setText(stringFromJNI());
 
-        males = max_treats = 0;
-        total_pat = patientList.size();
-        top_pat = mCurrPatient;
-
-        TextView no_of_pat_v = (TextView) findViewById(R.id.total_pat);
-        TextView male_pat_v = (TextView) findViewById(R.id.male_pat);
-        TextView female_pat_v = (TextView) findViewById(R.id.female_pat);
-        TextView top_pat_v = (TextView) findViewById(R.id.top_pat);
-
-        for (Patient pat: patientList) {
-            if (pat.Gender.equals("Male")) {
-                males++;
-            }
-            tlist = treatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
-            if (tlist.size() > max_treats) {
-                top_pat = pat;
-                max_treats = tlist.size();
-            }
+        // Set login options
+        spinner = (Spinner)findViewById(R.id.doctor);
+        List<String> loginList = new ArrayList<String>();
+        mDocList = doctorDB.GetDoctorList(ListOrder.ASCENDING);
+        for (Doctor doc : mDocList) {
+            loginList.add(doc.name);
         }
 
-        no_of_pat_v.setText(String.format("%d",total_pat));
-        male_pat_v.setText(String.format("%.2f", (males * 100.0)/total_pat) + "% Males  | ");
-        female_pat_v.setText(String.format("%.2f", (100.0 * (total_pat - males))/total_pat) + "% Females");
-        top_pat_v.setText(String.format("%s", top_pat.Name) + " is the Top Patient with " +
-                String.format("%d", max_treats) + " visits");
+        // Creating adapter for spinner
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, loginList);
+
+        // Drop down layout style - list view with radio button
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // attaching data adapter to spinner
+        spinner.setAdapter(dataAdapter);
     }
+
+    public void AddNewDoctor() {
+        currLayout = R.layout.add_edit_doc;
+        setContentView(currLayout);
+        Button del = (Button) findViewById(R.id.doc_del);
+        del.setVisibility(View.INVISIBLE);
+        update_mode(Mode.ADD_DOCT);
+    }
+
+    public void SaveDocRecord(View view) {
+        EditText docName, docPhone, docEmail;
+        String name, ph, email;
+
+        docName = (EditText)findViewById(R.id.docName);
+        docPhone = (EditText)findViewById(R.id.docPhone);
+        docEmail = (EditText)findViewById(R.id.docEmail);
+
+        name = docName.getText().toString();
+        ph = docPhone.getText().toString();
+        email = docEmail.getText().toString();
+
+        Doctor doc = new Doctor(name, ph, email);
+        doctorDB.AddDoctor(doc);
+
+        myOnBackPressed();
+    }
+
+    public void DeleteCurrDoc(View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure to delete this Doctor?");
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked ok button
+                doctorDB.DeleteDoctor(mDoctor);
+                myOnBackPressed();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+                myOnBackPressed();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
+    public void CancelDocRecordEdit(View view) {
+        myOnBackPressed();
+    }
+
+
+
+    //M O D E   M A N A G E M E N T   F U N C T I O N S
+    private void update_mode(Mode mode) {
+        //if (mode != Mode.VIEW_PAT) {
+        //    mSrchstr = ""; // clear the patient search once go out of View Patient mode.
+        //}
+        mModePrev = mMode;
+        mMode = mode;
+        Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
+    }
+
+    public void onLogin(View view) {
+        // setup main view
+        currLayout = R.layout.patients;
+        setContentView(currLayout);
+        renderPatientview();
+
+        // setup menu
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, mMenu);
+        MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
+        doctMenuItem.setVisible(false);
+        getDynamicFilePermission();
+    }
+
+    public void doDatabaseBackup(String backupfile, boolean force) {
+        String backuppath = getBackupFilePath(backupfile);
+
+        // save backups if any database failed
+        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
+            Log.d(TAG, "onPause: creating " + backuppath);
+
+            // backup databases and notify the event to all DB interface classes
+            this.exportDB(backuppath);
+            patientDB.DbSaved();
+            treatmentDB.DbSaved();
+            doctorDB.DbSaved();
+            Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        doDatabaseBackup(BACKUPFILE, false);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+
+    public void renderPatientview() {
+        mPatientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+        renderPatRecycleView(mPatientList);
+        update_mode(Mode.VIEW_PAT);
+    }
+
+
+    private void myOnBackPressed() {
+       if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
+           currLayout = R.layout.login;
+           setContentView(currLayout);
+           setupDoctorLoginSpinner();
+           update_mode(Mode.LOGIN);
+       }
+       else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
+           //if (mModePrev == Mode.UPDATE_PAT) {
+           //    EditPatientRecord();
+           //}
+           //else {
+               //renderPatientview();
+               refreshPatRecycleView();
+           //}
+       }
+       else {
+           //renderPatientview();
+           refreshPatRecycleView();
+       }
+   }
+
+    public void QueryBeforeHandleBackPress() {
+        // This function is added to print a dialog box to handle back button presses whilst
+        // editing or adding records
+        if (/*(mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) && */
+                (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
+            myOnBackPressed();
+            return;
+        }
+
+        Log.d(TAG, "QueryBeforeHandleBackPress: mMode = " + mMode);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want to save this record?");
+        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked ok button
+                /*if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
+                    SavePatientRecord(findViewById(android.R.id.content));
+                }
+                else */
+                if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
+                    SaveDocRecord(findViewById(android.R.id.content));
+                }
+                myOnBackPressed();
+            }
+        });
+        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+                myOnBackPressed();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
+    private Boolean exit = false;
+    @Override
+    public void onBackPressed() {
+        if (mMode == Mode.LOGIN) {
+            finish();
+        }
+        //else if (mMode == Mode.VIEW_PAT_STAT) {
+        //    myOnBackPressed();
+        //}
+        else if (mMode != Mode.VIEW_PAT) {
+            QueryBeforeHandleBackPress();
+        }
+        else {
+            if (exit) {
+                finish(); // finish activity
+            } else {
+                Toast.makeText(this, "Press Back again to Exit.",
+                        Toast.LENGTH_SHORT).show();
+                exit = true;
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        exit = false;
+                    }
+                }, 3 * 1000);
+            }
+        }
+    }
+
 
     // D A T A B A S E   E X P O R T   /   I M P O R T   O P E R A T I O N S
     // invoked from menu to import or export database
@@ -670,224 +941,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    // D O C T O R   H A N D L I N G
-    private void setupDoctorLoginSpinner() {
-        // Welcome message
-        TextView tv = (TextView) findViewById(R.id.message_txt);
-        tv.setText(stringFromJNI());
+    private void hideKeyboard() {
+        Context context = this;
+        View view = getCurrentFocus().getRootView();
 
-        // Set login options
-        spinner = (Spinner)findViewById(R.id.doctor);
-        List<String> loginList = new ArrayList<String>();
-        mDocList = doctorDB.GetDoctorList(ListOrder.ASCENDING);
-        for (Doctor doc : mDocList) {
-            loginList.add(doc.name);
-        }
-
-        // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, loginList);
-
-        // Drop down layout style - list view with radio button
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // attaching data adapter to spinner
-        spinner.setAdapter(dataAdapter);
-    }
-
-    public void AddNewDoctor() {
-        currLayout = R.layout.add_edit_doc;
-        setContentView(currLayout);
-        Button del = (Button) findViewById(R.id.doc_del);
-        del.setVisibility(View.INVISIBLE);
-        update_mode(Mode.ADD_DOCT);
-    }
-
-    public void SaveDocRecord(View view) {
-        EditText docName, docPhone, docEmail;
-        String name, ph, email;
-
-        docName = (EditText)findViewById(R.id.docName);
-        docPhone = (EditText)findViewById(R.id.docPhone);
-        docEmail = (EditText)findViewById(R.id.docEmail);
-
-        name = docName.getText().toString();
-        ph = docPhone.getText().toString();
-        email = docEmail.getText().toString();
-
-        Doctor doc = new Doctor(name, ph, email);
-        doctorDB.AddDoctor(doc);
-
-        myOnBackPressed();
-    }
-
-    public void DeleteCurrDoc(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Are you sure to delete this Doctor?");
-        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User clicked ok button
-                doctorDB.DeleteDoctor(mDoctor);
-                myOnBackPressed();
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-                myOnBackPressed();
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-
-    public void CancelDocRecordEdit(View view) {
-        myOnBackPressed();
-    }
-
-
-
-    //M O D E   M A N A G E M E N T   F U N C T I O N S
-    private void update_mode(Mode mode) {
-        if (mode != Mode.VIEW_PAT) {
-            mSrchstr = ""; // clear the patient search once go out of View Patient mode.
-        }
-        mModePrev = mMode;
-        mMode = mode;
-        Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
-    }
-
-    public void onLogin(View view) {
-        // setup main view
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        renderPatientview();
-
-        // setup menu
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, mMenu);
-        MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
-        doctMenuItem.setVisible(false);
-        getDynamicFilePermission();
-    }
-
-    public void doDatabaseBackup(String backupfile, boolean force) {
-        String backuppath = getBackupFilePath(backupfile);
-
-        // save backups if any database failed
-        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
-            Log.d(TAG, "onPause: creating " + backuppath);
-
-            // backup databases and notify the event to all DB interface classes
-            this.exportDB(backuppath);
-            patientDB.DbSaved();
-            treatmentDB.DbSaved();
-            doctorDB.DbSaved();
-            Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        doDatabaseBackup(BACKUPFILE, false);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-
-    public void renderPatientview() {
-        patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
-        renderPatRecycleView(patientList);
-        update_mode(Mode.VIEW_PAT);
-    }
-
-
-    private void myOnBackPressed() {
-       if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
-           currLayout = R.layout.login;
-           setContentView(currLayout);
-           setupDoctorLoginSpinner();
-           update_mode(Mode.LOGIN);
-       }
-       else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
-           if (mModePrev == Mode.UPDATE_PAT) {
-               EditPatientRecord();
-           }
-           else {
-               renderPatientview();
-           }
-       }
-       else {
-           renderPatientview();
-       }
-   }
-
-    public void QueryBeforeHandleBackPress() {
-
-        if ((mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
-                (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
-            myOnBackPressed();
-            return;
-        }
-
-        Log.d(TAG, "QueryBeforeHandleBackPress: mMode = " + mMode);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Do you want to save this record?");
-        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User clicked ok button
-                if ((mMode == Mode.ADD_PAT) || (mMode == Mode.UPDATE_PAT)) {
-                    SavePatientRecord(findViewById(android.R.id.content));
-                }
-                else if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
-                    SaveDocRecord(findViewById(android.R.id.content));
-                }
-                myOnBackPressed();
-            }
-        });
-        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-                myOnBackPressed();
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-
-    private Boolean exit = false;
-    @Override
-    public void onBackPressed() {
-        if (mMode == Mode.LOGIN) {
-            finish();
-        }
-        else if (mMode != Mode.VIEW_PAT) {
-            QueryBeforeHandleBackPress();
-        }
-        else {
-            if (exit) {
-                finish(); // finish activity
-            } else {
-                Toast.makeText(this, "Press Back again to Exit.",
-                        Toast.LENGTH_SHORT).show();
-                exit = true;
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        exit = false;
-                    }
-                }, 3 * 1000);
-            }
-        }
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 }

@@ -249,7 +249,7 @@ public class PatientDB extends SQLiteOpenHelper{
         res = db.rawQuery(query, null);
         res.moveToFirst();
 
-        if (res.getCount() <= 0) {
+        if ((res.getCount() <= 0) || ((complaint == null) && (prescription == null))) {
             Log.d(TAG, "Query on database '" + db.getPath() + "' returned 0 elements!");
             pat = new Patient("Empty", "", "", "", "", "");
             patientList.add(pat);

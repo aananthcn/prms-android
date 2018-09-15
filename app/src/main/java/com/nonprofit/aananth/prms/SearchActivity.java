@@ -12,6 +12,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -35,22 +36,29 @@ public class SearchActivity extends AppCompatActivity {
     private PatRecyclerAdapter mPatRcAdapter;
 
     private SearchTypes mSearchType;
+    private String mPrescription, mComplaint, mMessage;
+    private Boolean initialPatRenderingDone = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.complaint_search);
+        Log.d(TAG, "onCreate()");
 
         //do basic initialization of objects
         mPatientDB = new PatientDB(this);
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
-        String message = intent.getStringExtra(EXTRA_MESSAGE);
+        mMessage = intent.getStringExtra(EXTRA_MESSAGE);
         mDoctor = (Doctor) intent.getSerializableExtra("doctor");
+        mPatientList = mPatientDB.GetPatientListWith(null, null);
+    }
 
+
+    private void getSearchInputs() {
         final EditText srchBox = (EditText) findViewById(R.id.search_txt);
-        srchBox.setHint(findSearchType(message));
+        srchBox.setHint(findSearchType(mMessage));
         srchBox.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -64,23 +72,27 @@ public class SearchActivity extends AppCompatActivity {
                             String srchstr = srchBox.getText().toString();
                             if (mSearchType == SearchTypes.COMPLAINT_SEARCH) {
                                 SearchPatientsWithComplaint(srchstr);
+                                mComplaint = srchstr;
+                                Log.d(TAG, "onCreate::mComplaint = " + mComplaint );
                             }
                             else if (mSearchType == SearchTypes.PRESCRIPTION_SEARCH) {
                                 SearchPatientsTreatedWith(srchstr);
+                                mPrescription = srchstr;
+                                Log.d(TAG, "onCreate::mPrescription = " + mPrescription );
                             }
                             else {
                                 Log.d(TAG, "SearchTypes.INVALID_SEARCH");
                             }
                             handled = true;
                         default:
-                            Log.d(TAG, " setOnKeyListener search patient: unknown key " + keyCode);
+                            //Log.d(TAG, " setOnKeyListener search patient: unknown key " + keyCode);
                             break;
                     }
                 }
                 return handled;
-
             }
         });
+
     }
 
     private String findSearchType(String message) {
@@ -106,16 +118,40 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void SearchPatientsTreatedWith(String prescription) {
+        if (mPatientList.size() > 0) {
+            mPatientList.clear();
+        }
+        mPatientList.addAll(mPatientDB.GetPatientListWith(null, prescription));
         Log.d(TAG, "Search patient records for prescription");
-        mPatientList = mPatientDB.GetPatientListWith(null, prescription);
-        renderPatRecycleView();
+        if (mPatientList.size() == 0) {
+            Toast.makeText(getBaseContext(), "No patients found", Toast.LENGTH_SHORT).show();
+        }
+
+        if (initialPatRenderingDone) {
+            refreshPatRecycleView();
+        }
+        else {
+            renderPatRecycleView();
+        }
         hideKeyboard();
     }
 
     private void SearchPatientsWithComplaint(String complaint) {
+        if (mPatientList.size() > 0) {
+            mPatientList.clear();
+        }
+        mPatientList.addAll(mPatientDB.GetPatientListWith(complaint, null));
         Log.d(TAG, "Search patient records for complaints");
-        mPatientList = mPatientDB.GetPatientListWith(complaint, null);
-        renderPatRecycleView();
+        if (mPatientList.size() == 0) {
+            Toast.makeText(getBaseContext(), "No patients found", Toast.LENGTH_SHORT).show();
+        }
+
+        if (initialPatRenderingDone) {
+            refreshPatRecycleView();
+        }
+        else {
+            renderPatRecycleView();
+        }
         hideKeyboard();
     }
 
@@ -133,6 +169,7 @@ public class SearchActivity extends AppCompatActivity {
         mRecyclerView.setAdapter(mPatRcAdapter);
 
         mPatRcAdapter.notifyDataSetChanged();
+        initialPatRenderingDone = true;
 
         mRecyclerView.addOnItemTouchListener(new RecyclerTouchListener(this,
                 mRecyclerView, new MainActivity.ClickListener() {
@@ -160,7 +197,39 @@ public class SearchActivity extends AppCompatActivity {
         }));
     }
 
-    public void hideKeyboard() {
+
+    public void refreshPatRecycleView() {
+        // It is assumed that mPatientList is updated with latest content at this point.
+        // Hence, we always call notifyDataSetChanged() here unconditionally !!
+        if (mSearchType == SearchTypes.COMPLAINT_SEARCH) {
+            setTitle("Patients with Complaints");
+            Log.d(TAG, "mComplaint = " + mComplaint);
+        }
+        else if (mSearchType == SearchTypes.PRESCRIPTION_SEARCH) {
+            setTitle("Patients taking Treatments");
+            Log.d(TAG, "mPrescription = " + mPrescription );
+        }
+        mPatRcAdapter.notifyDataSetChanged();
+        Log.d(TAG, "refreshPatRecycleView()");
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Log.d(TAG, "onResume()");
+
+        if (initialPatRenderingDone) {
+            refreshPatRecycleView();
+        }
+        else {
+            getSearchInputs();
+        }
+    }
+
+
+    private void hideKeyboard() {
         Context context = SearchActivity.this;
         View view = getCurrentFocus().getRootView();
 
