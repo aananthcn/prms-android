@@ -768,6 +768,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // setup menu
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, mMenu);
+        MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
+        doctMenuItem.setVisible(false);
         getDynamicFilePermission();
     }
 
