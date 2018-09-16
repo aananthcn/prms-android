@@ -26,28 +26,27 @@
             android:textSize="18sp" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/male_pat"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:orientation="horizontal">
+        android:text="Male"
+        android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/male_pat"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Male"
-            android:textSize="18sp" />
+    <TextView
+        android:id="@+id/female_pat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Female"
+        android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/female_pat"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="3dp"
-            android:layout_marginRight="3dp"
-            android:text="Female"
-            android:textSize="18sp" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/no_gender"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Gender not marked"
+        android:textSize="18sp" />
+
     <TextView
         android:id="@+id/top_pat"
         android:layout_width="wrap_content"

@@ -6,6 +6,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,12 +42,25 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent = getIntent();
         mLoginMessage = intent.getStringExtra(EXTRA_MESSAGE);
         mDoctor = (Doctor) intent.getSerializableExtra("doctor");
+    }
+
+
+    public void onResume() {
+        super.onResume();
         setupDoctorLoginSpinner();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.login_menu, menu);
+        return true;
     }
 
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d(TAG, "onOptionsItemSelected()");
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.add_doctor:
@@ -66,7 +80,9 @@ public class LoginActivity extends AppCompatActivity {
         mSpinner = (Spinner)findViewById(R.id.doctor);
         List<String> loginList = new ArrayList<String>();
         mDocList = doctorDB.GetDoctorList(ListOrder.ASCENDING);
+        Log.d(TAG, "mDocList.size = " + mDocList.size());
         for (Doctor doc : mDocList) {
+            Log.d(TAG, "Doctor name = " + doc.name);
             loginList.add(doc.name);
         }
 
@@ -84,65 +100,31 @@ public class LoginActivity extends AppCompatActivity {
 
     public void AddNewDoctor() {
         Log.d(TAG, "AddNewDoctor()");
-        Button del = (Button) findViewById(R.id.doc_del);
-        del.setVisibility(View.INVISIBLE);
-    }
-
-
-    public void SaveDocRecord(View view) {
-        Log.d(TAG, "SaveDocRecord()");
-        EditText docName, docPhone, docEmail;
-        String name, ph, email;
-
-        docName = (EditText)findViewById(R.id.docName);
-        docPhone = (EditText)findViewById(R.id.docPhone);
-        docEmail = (EditText)findViewById(R.id.docEmail);
-
-        name = docName.getText().toString();
-        ph = docPhone.getText().toString();
-        email = docEmail.getText().toString();
-
-        Doctor doc = new Doctor(name, ph, email);
-        doctorDB.AddDoctor(doc);
-
-        this.onBackPressed();
-    }
-
-
-    public void DeleteCurrDoc(View view) {
-        Log.d(TAG, "DeleteCurrDoc()");
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Are you sure to delete this Doctor?");
-        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User clicked ok button
-                doctorDB.DeleteDoctor(mDoctor);
-                //myOnBackPressed();
-                LoginActivity.this.onBackPressed();
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-                LoginActivity.this.onBackPressed();
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-
-    public void CancelDocRecordEdit(View view) {
-        Log.d(TAG, "DeleteCurrDoc()");
-        this.onBackPressed();
+        Intent intent = new Intent(this, DoctorAddEditActivity.class);
+        intent.putExtra("doctor", mDoctor);
+        intent.putExtra(EXTRA_MESSAGE, "add doctor");
+        startActivity(intent);
     }
 
 
     public void onLoginButtonClick(View view) {
         Log.d(TAG, "onLoginButtonClick()");
+
+        if(mDocList.size() > 0) {
+            if (!mDocList.get(0).name.equalsIgnoreCase("Empty")) {
+                Intent intent = new Intent();
+                intent.putExtra("login result", "login successful");
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        }
+    }
+
+
+    @Override
+    public void onBackPressed() {
         Intent intent = new Intent();
-        intent.putExtra("login result", "login successful");
+        intent.putExtra("login result", "login exit");
         setResult(RESULT_OK, intent);
         finish();
     }

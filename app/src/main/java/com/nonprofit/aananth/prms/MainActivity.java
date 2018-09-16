@@ -335,16 +335,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     //   P A T I E N T   S T A T I S T I C S
     public void ShowPatientStatistics() {
         List<Treatment> tlist;
-        int max_treats, males, total_pat;
+        int max_treats, males, females, total_pat;
         Patient top_pat;
 
-        males = max_treats = 0;
+        males = females = max_treats = 0;
         total_pat = mPatientList.size();
         top_pat = mCurrPatient;
 
         for (Patient pat: mPatientList) {
             if (pat.Gender.equals("Male")) {
                 males++;
+            }
+            else if (pat.Gender.equals("Female")) {
+                females++;
             }
             tlist = treatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
             if (tlist.size() > max_treats) {
@@ -353,8 +356,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
 
-        PatStatistics pstat = new PatStatistics(total_pat, males,
-                (total_pat - males), top_pat.Name, max_treats);
+        PatStatistics pstat = new PatStatistics(total_pat, males, females, top_pat.Name, max_treats);
 
         Intent intent = new Intent(this, PatStatisticsActivity.class);
         intent.putExtra("patient statistics", pstat);
@@ -366,11 +368,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     // M E N U   H A N D L I N G
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.login_menu, menu);
         mMenu = menu;
         return true;
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -545,11 +546,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     Log.d(TAG, "onActivityResult()::LOGIN_ACTIVITY");
                     String strLoginResult = resultData.getStringExtra("login result");
 
-                    MenuInflater inflater = getMenuInflater();
-                    inflater.inflate(R.menu.main_menu, mMenu);
-                    MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
-                    doctMenuItem.setVisible(false);
-                    update_mode(Mode.REND_PAT); // will be rendered inside onResume
+                    if (strLoginResult.equalsIgnoreCase("login exit")) {
+                        finish();
+                    }
+                    else {
+                        MenuInflater inflater = getMenuInflater();
+                        inflater.inflate(R.menu.main_menu, mMenu);
+                        //MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
+                        //doctMenuItem.setVisible(false);
+                        update_mode(Mode.REND_PAT); // will be rendered inside onResume
+                    }
                 }
                 break;
         }

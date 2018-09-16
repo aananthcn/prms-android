@@ -21,6 +21,7 @@ public class PatStatisticsActivity extends AppCompatActivity {
         TextView no_of_pat_v = (TextView) findViewById(R.id.total_pat);
         TextView male_pat_v = (TextView) findViewById(R.id.male_pat);
         TextView female_pat_v = (TextView) findViewById(R.id.female_pat);
+        TextView no_gender_v = (TextView) findViewById(R.id.no_gender);
         TextView top_pat_v = (TextView) findViewById(R.id.top_pat);
 
 
@@ -29,11 +30,14 @@ public class PatStatisticsActivity extends AppCompatActivity {
 
         no_of_pat_v.setText(String.format(Locale.US, "%d", mPatStatistics.TotalPatients));
 
-        String males = String.format(Locale.US, "%.2f", (100.0 * mPatStatistics.MalePatients)/mPatStatistics.TotalPatients) + "% Males  | ";
+        String males = String.format(Locale.US, "%.2f", (100.0 * mPatStatistics.MalePatients)/mPatStatistics.TotalPatients) + "% : Males";
         male_pat_v.setText(males);
 
-        String females = String.format(Locale.US, "%.2f", (100.0 * mPatStatistics.FemalePatients)/mPatStatistics.TotalPatients) + "% Females";
+        String females = String.format(Locale.US, "%.2f", (100.0 * mPatStatistics.FemalePatients)/mPatStatistics.TotalPatients) + "% : Females";
         female_pat_v.setText(females);
+
+        String no_gender = String.format(Locale.US, "%.2f", (100.0 * (mPatStatistics.FemalePatients+mPatStatistics.MalePatients))/mPatStatistics.TotalPatients) + "% : Gender Not Set";
+        no_gender_v.setText(no_gender);
 
         String top_pat = mPatStatistics.TopPatient + " is the Top Patient with " +  mPatStatistics.TopPatientVisits + " visits";
         top_pat_v.setText(top_pat);
