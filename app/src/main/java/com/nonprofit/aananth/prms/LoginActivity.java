@@ -84,11 +84,8 @@ public class LoginActivity extends AppCompatActivity {
 
     public void AddNewDoctor() {
         Log.d(TAG, "AddNewDoctor()");
-        //currLayout = R.layout.add_edit_doc;
-        //setContentView(currLayout);
         Button del = (Button) findViewById(R.id.doc_del);
         del.setVisibility(View.INVISIBLE);
-        //update_mode(Mode.ADD_DOCT);
     }
 
 
@@ -108,7 +105,6 @@ public class LoginActivity extends AppCompatActivity {
         Doctor doc = new Doctor(name, ph, email);
         doctorDB.AddDoctor(doc);
 
-        //myOnBackPressed();
         this.onBackPressed();
     }
 
@@ -128,7 +124,6 @@ public class LoginActivity extends AppCompatActivity {
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User cancelled the dialog
-                //myOnBackPressed();
                 LoginActivity.this.onBackPressed();
             }
         });
@@ -140,7 +135,6 @@ public class LoginActivity extends AppCompatActivity {
 
     public void CancelDocRecordEdit(View view) {
         Log.d(TAG, "DeleteCurrDoc()");
-        //myOnBackPressed();
         this.onBackPressed();
     }
 

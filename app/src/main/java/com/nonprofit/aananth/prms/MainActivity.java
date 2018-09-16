@@ -106,8 +106,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
 
-        //setContentView(R.layout.login);
-        //setupDoctorLoginSpinner();
         getDynamicFilePermission();
     }
 
@@ -322,7 +320,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             return;
         }
 
-        //setContentView(R.layout.patients);
         setTitle("Patients List");
         Log.d(TAG, "refreshPatRecycleView()");
 
@@ -407,89 +404,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    /*
-    // D O C T O R   H A N D L I N G
-    private void setupDoctorLoginSpinner() {
-        // Welcome message
-        TextView tv = (TextView) findViewById(R.id.message_txt);
-        tv.setText(stringFromJNI());
-
-        // Set login options
-        spinner = (Spinner)findViewById(R.id.doctor);
-        List<String> loginList = new ArrayList<String>();
-        mDocList = doctorDB.GetDoctorList(ListOrder.ASCENDING);
-        for (Doctor doc : mDocList) {
-            loginList.add(doc.name);
-        }
-
-        // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, loginList);
-
-        // Drop down layout style - list view with radio button
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // attaching data adapter to spinner
-        spinner.setAdapter(dataAdapter);
-    }
-
-
-    public void AddNewDoctor() {
-        currLayout = R.layout.add_edit_doc;
-        setContentView(currLayout);
-        Button del = (Button) findViewById(R.id.doc_del);
-        del.setVisibility(View.INVISIBLE);
-        update_mode(Mode.ADD_DOCT);
-    }
-
-
-    public void SaveDocRecord(View view) {
-        EditText docName, docPhone, docEmail;
-        String name, ph, email;
-
-        docName = (EditText)findViewById(R.id.docName);
-        docPhone = (EditText)findViewById(R.id.docPhone);
-        docEmail = (EditText)findViewById(R.id.docEmail);
-
-        name = docName.getText().toString();
-        ph = docPhone.getText().toString();
-        email = docEmail.getText().toString();
-
-        Doctor doc = new Doctor(name, ph, email);
-        doctorDB.AddDoctor(doc);
-
-        myOnBackPressed();
-    }
-
-
-    public void DeleteCurrDoc(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Are you sure to delete this Doctor?");
-        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User clicked ok button
-                doctorDB.DeleteDoctor(mDoctor);
-                myOnBackPressed();
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-                myOnBackPressed();
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-
-    public void CancelDocRecordEdit(View view) {
-        myOnBackPressed();
-    }
-    */
-
-
     //M O D E   M A N A G E M E N T   F U N C T I O N S
     private void update_mode(Mode mode) {
         mModePrev = mMode;
@@ -518,35 +432,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
     private void myOnBackPressed() {
-       /*
-        if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
-           currLayout = R.layout.login;
-           setContentView(currLayout);
-           //setupDoctorLoginSpinner();
-           update_mode(Mode.LOGIN);
-       }
-       else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
-           //renderPatientview();
-           refreshPatRecycleView();
-       }
-       else {
-           //renderPatientview();
-       }
-       */
         refreshPatRecycleView();
-   }
+    }
 
     public void QueryBeforeHandleBackPress() {
-        // This function is added to print a dialog box to handle back button presses whilst
-        // editing or adding records
-        /*
-        if ((mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
-                (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
-            myOnBackPressed();
-            return;
-        }
-        */
-
         Log.d(TAG, "QueryBeforeHandleBackPress: mMode = " + mMode);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Do you want to save this record?");
