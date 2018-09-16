@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     // Aananth added this
     public enum Mode {
-        LOGIN, REND_PAT, VIEW_PAT,
+        PERMISSION_GET, LOGIN, REND_PAT, VIEW_PAT,
         /* VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,*/
         MAX_MODE
     }
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // Aananth added these lines
         PACKAGE_NAME = getApplicationContext().getPackageName();
-        mMode = Mode.LOGIN;
+        mMode = Mode.PERMISSION_GET;
         currLayout = R.layout.login;
         patientDB = new PatientDB(this);
         treatmentDB = new TreatmentDB(this);
@@ -114,8 +114,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onResume();
 
         Log.d(TAG, "onResume()");
-        if (mMode == Mode.LOGIN) {
+        if (mMode == Mode.PERMISSION_GET) {
             getDynamicFilePermission();
+        }
+        else if (mMode == Mode.LOGIN) {
+            setupLoginScreen();
         }
         else if (mMode == Mode.REND_PAT) {
             renderPatientview(); //Patient view is rendered for the first time, here
@@ -154,31 +157,35 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     public void getDynamicFilePermission() {
         // Here, thisActivity is the current activity
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
-
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
+                // TODO: Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[] {
+                Log.d(TAG, "getDynamicFilePermission() - Needs Explanation!");
+                // FIXME: Let us request again..
+                ActivityCompat.requestPermissions(this, new String[] {
                                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.READ_EXTERNAL_STORAGE},
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                        },
+                        MY_PERMISSION_REQUEST
+                );
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this, new String[] {
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                        },
                         MY_PERMISSION_REQUEST
                 );
             }
         }
         else {
+            //permission already granted, so go to Login Screen
+            mMode = Mode.LOGIN;
             setupLoginScreen();
         }
     }
@@ -195,12 +202,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
-                    setupLoginScreen();
+                    // setupLoginScreen();
+                    mMode = Mode.LOGIN;
 
                 } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    // permission denied, boo! Lets exit.
+                    mMode = Mode.PERMISSION_GET;
+                    finish();
                 }
                 return;
             }
