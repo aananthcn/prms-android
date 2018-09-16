@@ -106,7 +106,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
 
-        getDynamicFilePermission();
     }
 
 
@@ -116,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         Log.d(TAG, "onResume()");
         if (mMode == Mode.LOGIN) {
-            setupLoginScreen();
+            getDynamicFilePermission();
         }
         else if (mMode == Mode.REND_PAT) {
             renderPatientview(); //Patient view is rendered for the first time, here
@@ -128,6 +127,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
     private void setupLoginScreen() {
+        Log.d(TAG, "setupLoginScreen()");
+
         Intent intent = new Intent(this, LoginActivity.class);
         intent.putExtra("doctor", mDoctor);
         intent.putExtra(EXTRA_MESSAGE, stringFromJNI());
@@ -177,6 +178,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 );
             }
         }
+        else {
+            setupLoginScreen();
+        }
     }
 
 
@@ -191,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
+                    setupLoginScreen();
 
                 } else {
 
