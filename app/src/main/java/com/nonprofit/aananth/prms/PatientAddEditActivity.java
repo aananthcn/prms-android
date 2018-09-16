@@ -1,5 +1,7 @@
 package com.nonprofit.aananth.prms;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v7.app.AlertDialog;
@@ -7,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -115,12 +118,13 @@ public class PatientAddEditActivity extends AppCompatActivity {
             mPatientDB.UpdatePatient(pat);
             Log.d(TAG, " Updated patient '" + pat.Name + "'");
         }
-        //myOnBackPressed();
+        hideKeyboard();
         this.onBackPressed();
     }
 
     public void CancelPatientRecordEdit(View view) {
         Log.d(TAG, "CancelPatientRecordEdit()");
+        hideKeyboard();
         this.onBackPressed();
     }
 
@@ -150,5 +154,16 @@ public class PatientAddEditActivity extends AppCompatActivity {
     private void update_mode(Mode mode) {
         Log.d(TAG, "mMode (old) = " + mMode + ", mMode (new) = " + mode);
         mMode = mode;
+    }
+
+
+    private void hideKeyboard() {
+        Context context = this;
+        View view = getCurrentFocus().getRootView();
+
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 }

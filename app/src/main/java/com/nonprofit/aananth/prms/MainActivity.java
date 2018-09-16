@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
@@ -28,12 +27,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -43,7 +39,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.String;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -53,23 +48,28 @@ import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener
 {
-
     // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
     }
 
+    // **
+    // * A native method that is implemented by the 'native-lib' native library,
+    // * which is packaged with this application.
+    // *
+    public native String stringFromJNI();
+
     // Aananth added this
     public enum Mode {
-        LOGIN,
-        VIEW_PAT, /* ADD_PAT, UPDATE_PAT */
-        VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,
+        LOGIN, REND_PAT, VIEW_PAT,
+        /* VIEW_DOCT, ADD_DOCT, UPDATE_DOCT,*/
         MAX_MODE
     }
     public static String PACKAGE_NAME;
     public static final int CREATE_FILE = 101;
     public static final int OPEN_FILE = 102;
     public static final int MY_PERMISSION_REQUEST = 103;
+    public static final int LOGIN_ACTIVITY = 104;
 
     // Aananth added these member variables
     private String TAG = "PRMS-MainActivity";
@@ -96,7 +96,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "-----------------\nWelcome to PRMS!!\n---");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.login);
 
         // Aananth added these lines
         PACKAGE_NAME = getApplicationContext().getPackageName();
@@ -107,8 +106,36 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
 
-        setupDoctorLoginSpinner();
+        //setContentView(R.layout.login);
+        //setupDoctorLoginSpinner();
+        getDynamicFilePermission();
     }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Log.d(TAG, "onResume()");
+        if (mMode == Mode.LOGIN) {
+            setupLoginScreen();
+        }
+        else if (mMode == Mode.REND_PAT) {
+            renderPatientview(); //Patient view is rendered for the first time, here
+        }
+        else {
+            refreshPatRecycleView();
+        }
+    }
+
+
+    private void setupLoginScreen() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.putExtra("doctor", mDoctor);
+        intent.putExtra(EXTRA_MESSAGE, stringFromJNI());
+        startActivityForResult(intent, LOGIN_ACTIVITY);
+    }
+
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -119,15 +146,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // Showing selected spinner item
         Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_SHORT).show();
     }
+
+
     public void onNothingSelected(AdapterView<?> arg0) {
         // TODO Auto-generated method stub
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
 
     public void getDynamicFilePermission() {
         // Here, thisActivity is the current activity
@@ -156,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -308,13 +333,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        Log.d(TAG, "onResume()");
-        refreshPatRecycleView();
-    }
 
 
     //   P A T I E N T   S T A T I S T I C S
@@ -363,22 +381,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         switch (item.getItemId()) {
             case R.id.export_db:
                 createFileOpenDialog(CREATE_FILE);
-                return true;
+                return true; // say to android that this menu event is handled here...
             case R.id.import_db:
                 createFileOpenDialog(OPEN_FILE);
-                return true;
-            case R.id.add_doctor:
-                AddNewDoctor();
-                return true;
+                return true; // say to android that this menu event is handled here...
             case R.id.complaint_search:
                 SwitchToSearchActivity("complaint search");
-                return true;
+                return true; // say to android that this menu event is handled here...
             case R.id.prescription_search:
                 SwitchToSearchActivity("prescription search");
-                return true;
+                return true; // say to android that this menu event is handled here...
             case R.id.statistics_pat:
                 ShowPatientStatistics();
-                return true;
+                return true; // say to android that this menu event is handled here...
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -392,6 +407,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
+    /*
     // D O C T O R   H A N D L I N G
     private void setupDoctorLoginSpinner() {
         // Welcome message
@@ -471,7 +487,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void CancelDocRecordEdit(View view) {
         myOnBackPressed();
     }
-
+    */
 
 
     //M O D E   M A N A G E M E N T   F U N C T I O N S
@@ -479,37 +495,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mModePrev = mMode;
         mMode = mode;
         Log.d(TAG, "mMode = " + mMode + ", mModePrev = " + mModePrev);
-    }
-
-    public void onLogin(View view) {
-        // setup main view
-        currLayout = R.layout.patients;
-        setContentView(currLayout);
-        renderPatientview();
-
-        // setup menu
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, mMenu);
-        MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
-        doctMenuItem.setVisible(false);
-        getDynamicFilePermission();
-    }
-
-    public void doDatabaseBackup(String backupfile, boolean force) {
-        String backuppath = getBackupFilePath(backupfile);
-
-        // save backups if any database failed
-        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
-            Log.d(TAG, "onPause: creating " + backuppath);
-
-            // backup databases and notify the event to all DB interface classes
-            this.exportDB(backuppath);
-            patientDB.DbSaved();
-            treatmentDB.DbSaved();
-            doctorDB.DbSaved();
-            Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
-                    Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
@@ -533,10 +518,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
     private void myOnBackPressed() {
-       if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
+       /*
+        if (mMode == Mode.ADD_DOCT && mModePrev == Mode.LOGIN) {
            currLayout = R.layout.login;
            setContentView(currLayout);
-           setupDoctorLoginSpinner();
+           //setupDoctorLoginSpinner();
            update_mode(Mode.LOGIN);
        }
        else if ((mMode == Mode.ADD_DOCT) && (mModePrev != Mode.LOGIN)) {
@@ -545,18 +531,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
        }
        else {
            //renderPatientview();
-           refreshPatRecycleView();
        }
+       */
+        refreshPatRecycleView();
    }
 
     public void QueryBeforeHandleBackPress() {
         // This function is added to print a dialog box to handle back button presses whilst
         // editing or adding records
-        if (/*(mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) && */
+        /*
+        if ((mMode != Mode.ADD_PAT) && (mMode != Mode.UPDATE_PAT) &&
                 (mMode != Mode.ADD_DOCT) && (mMode != Mode.UPDATE_DOCT)) {
             myOnBackPressed();
             return;
         }
+        */
 
         Log.d(TAG, "QueryBeforeHandleBackPress: mMode = " + mMode);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -564,9 +553,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked ok button
+                /*
                 if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
                     SaveDocRecord(findViewById(android.R.id.content));
                 }
+                */
                 myOnBackPressed();
             }
         });
@@ -612,7 +603,88 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
+    private void hideKeyboard() {
+        Context context = this;
+        View view = getCurrentFocus().getRootView();
+
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode,
+                                 Intent resultData) {
+        super.onActivityResult(requestCode, resultCode, resultData);
+
+        String path = null;
+        Uri uri = null;
+        // The ACTION_OPEN_DOCUMENT intent was sent with the request code
+        // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
+        // response to some other intent, and the code below shouldn't run at all.
+        switch (requestCode) {
+            case CREATE_FILE:
+                if (resultCode == Activity.RESULT_OK) {
+                    // The document selected by the user won't be returned in the intent.
+                    // Instead, a URI to that document will be contained in the return intent
+                    // provided to this method as a parameter.
+                    // Pull that URI using resultData.getData().
+                    if (resultData != null) {
+                        uri = resultData.getData();
+                        path = convertUriToFilePath(uri);
+                        Log.i(TAG, "Create file: " + path);
+                        exportDB(path);
+                    }
+                }
+                break;
+
+            case OPEN_FILE:
+                if (resultCode == Activity.RESULT_OK) {
+                    if (resultData != null) {
+                        uri = resultData.getData();
+                        path = convertUriToFilePath(uri);
+                        Log.i(TAG, "Open file: " + path);
+                        importDB(path);
+                    }
+                }
+                break;
+
+            case LOGIN_ACTIVITY:
+                if (resultCode == Activity.RESULT_OK) {
+                    Log.d(TAG, "onActivityResult()::LOGIN_ACTIVITY");
+                    String strLoginResult = resultData.getStringExtra("login result");
+
+                    MenuInflater inflater = getMenuInflater();
+                    inflater.inflate(R.menu.main_menu, mMenu);
+                    MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
+                    doctMenuItem.setVisible(false);
+                    update_mode(Mode.REND_PAT); // will be rendered inside onResume
+                }
+                break;
+        }
+    }
+
+
     // D A T A B A S E   E X P O R T   /   I M P O R T   O P E R A T I O N S
+    public void doDatabaseBackup(String backupfile, boolean force) {
+        String backuppath = getBackupFilePath(backupfile);
+
+        // save backups if any database failed
+        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
+            Log.d(TAG, "onPause: creating " + backuppath);
+
+            // backup databases and notify the event to all DB interface classes
+            this.exportDB(backuppath);
+            patientDB.DbSaved();
+            treatmentDB.DbSaved();
+            doctorDB.DbSaved();
+            Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
     // invoked from menu to import or export database
     private void createFileOpenDialog(int action) {
         Intent intent = new Intent()
@@ -660,42 +732,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return "/Download/"+path;
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode,
-                                 Intent resultData) {
-        String path = null;
-        Uri uri = null;
-        // The ACTION_OPEN_DOCUMENT intent was sent with the request code
-        // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
-        // response to some other intent, and the code below shouldn't run at all.
-        switch (requestCode) {
-            case CREATE_FILE:
-                if (resultCode == Activity.RESULT_OK) {
-                    // The document selected by the user won't be returned in the intent.
-                    // Instead, a URI to that document will be contained in the return intent
-                    // provided to this method as a parameter.
-                    // Pull that URI using resultData.getData().
-                    if (resultData != null) {
-                        uri = resultData.getData();
-                        path = convertUriToFilePath(uri);
-                        Log.i(TAG, "Create file: " + path);
-                        exportDB(path);
-                    }
-                }
-                break;
-            case OPEN_FILE:
-                if (resultCode == Activity.RESULT_OK) {
-                    if (resultData != null) {
-                        uri = resultData.getData();
-                        path = convertUriToFilePath(uri);
-                        Log.i(TAG, "Open file: " + path);
-                        importDB(path);
-                    }
-                }
-                break;
-        }
-    }
-
     static public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
@@ -725,6 +761,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return outpath;
     }
 
+    /*
     private Date getFileDate(String fpath) {
         File file = new File(fpath);
         Date lastModDate = new Date(file.lastModified());
@@ -732,6 +769,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Log.d(TAG, "File " + fpath + " modified date: " + lastModDate.toString());
         return lastModDate;
     }
+    */
 
     // This function copies the MAIN_DATABASE used by this app to external storage path
     private void exportDB(String outpath) {
@@ -810,14 +848,5 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         finish();
         startActivity(i);
-    }
-
-
-    private void hideKeyboard() {
-        Context context = this;
-        View view = getCurrentFocus().getRootView();
-
-        InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 }

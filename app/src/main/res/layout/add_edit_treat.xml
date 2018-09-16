@@ -41,6 +41,7 @@
         android:gravity="top"
         android:hint="Enter complaints from patient"
         android:inputType="textMultiLine"
+        android:textSize="18sp"
         app:layout_constraintHorizontal_bias="0.529"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -74,13 +75,10 @@
         android:id="@+id/treat_sav_upd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="135dp"
         android:layout_marginRight="32dp"
         android:layout_marginTop="16dp"
         android:onClick="SaveTreatmentRecord"
         android:text="Save"
-        app:layout_constraintHorizontal_bias="0.111"
-        app:layout_constraintLeft_toRightOf="@+id/treat_canc_del"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/prescription" />
 </android.support.constraint.ConstraintLayout>

@@ -27,7 +27,8 @@
         <activity android:name=".TreatmentViewActivity" />
         <activity android:name=".TreatmentAddEditActivity" />
         <activity android:name=".PatStatisticsActivity" />
-        <activity android:name=".PatientAddEditActivity"></activity>
+        <activity android:name=".PatientAddEditActivity" />
+        <activity android:name=".LoginActivity"></activity>
     </application>
 
 </manifest>
