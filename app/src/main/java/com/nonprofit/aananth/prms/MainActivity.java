@@ -383,7 +383,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     // M E N U   H A N D L I N G
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu");
         mMenu = menu;
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, mMenu);
         return true;
     }
 
@@ -458,11 +461,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked ok button
-                /*
-                if ((mMode == Mode.ADD_DOCT) || (mMode == Mode.UPDATE_DOCT)) {
-                    SaveDocRecord(findViewById(android.R.id.content));
-                }
-                */
                 myOnBackPressed();
             }
         });
@@ -484,9 +482,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (mMode == Mode.LOGIN) {
             finish();
         }
-        //else if (mMode == Mode.VIEW_PAT_STAT) {
-        //    myOnBackPressed();
-        //}
         else if (mMode != Mode.VIEW_PAT) {
             QueryBeforeHandleBackPress();
         }
@@ -565,10 +560,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         finish();
                     }
                     else {
-                        MenuInflater inflater = getMenuInflater();
-                        inflater.inflate(R.menu.main_menu, mMenu);
-                        //MenuItem doctMenuItem = mMenu.findItem(R.id.add_doctor);
-                        //doctMenuItem.setVisible(false);
+                        ActivityCompat.invalidateOptionsMenu(MainActivity.this);
                         update_mode(Mode.REND_PAT); // will be rendered inside onResume
                     }
                 }
