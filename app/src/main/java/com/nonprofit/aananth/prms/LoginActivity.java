@@ -126,6 +126,7 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent = new Intent();
         intent.putExtra("login result", "login exit");
         setResult(RESULT_OK, intent);
+        doctorDB.close();
         finish();
     }
 }

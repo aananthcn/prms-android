@@ -118,11 +118,14 @@ public class PatientDB extends SQLiteOpenHelper{
                 //some toast message to user.
                 Log.d(TAG, "AddPatient: SQLiteDatatypeMismatchException");
             }else {
-                throw mSQLException;
+                // Getting Disk I/O error. Let us give a 2nd chance!
+                db.execSQL(query);
+                //throw mSQLException;
             }
             retval = 0; //add failure!!
         }
 
+        /* Let us create treatment table when we add a treatment, not here
         // If this is new patient, then create Treatment Table
         if (retval > 0) {
             String treatTable;
@@ -130,6 +133,7 @@ public class PatientDB extends SQLiteOpenHelper{
             treatTable = uid;
             treatDB.createTreatmentTableIfNotExist(db, treatTable);
         }
+        */
 
         return retval;
     }
@@ -278,6 +282,8 @@ public class PatientDB extends SQLiteOpenHelper{
         }
 
         res.close();
+        db.close();
+
         return patientList;
     }
 
@@ -287,29 +293,35 @@ public class PatientDB extends SQLiteOpenHelper{
             return false;
         }
 
-        String query = "SELECT * FROM " + tableName;
-        //String query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tableName + "'";
+        //String query = "SELECT * FROM " + tableName;
+        String query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tableName + "'";
         Log.d(TAG, query);
-        Cursor cursor = db.rawQuery(query, null);
 
-        if (!cursor.moveToFirst()) {
-            cursor.close();
+        Cursor res = db.rawQuery(query, null);
+        if ((res == null) || (res.getCount() <= 0)) {
+            Log.d(TAG, "isTableExists() query on "+db.getPath()+" fails!");
             return false;
         }
-        int count = cursor.getInt(0);
-        cursor.close();
-        Log.d(TAG, "isTableExists() query on "+db.getPath()+" returned "+ count + " results!");
 
-        return count > 0;
+        Log.d(TAG, "isTableExists() query on "+db.getPath()+" succeeded!");
+
+        return true;
     }
 
 
+    public void createPatientTableIfNotExist(SQLiteDatabase db, String tablename) {
+        String query = getCreateTableStr(tablename);
+        Log.d(TAG, query);
+        db.execSQL(query);
+    }
+
     // This function copies all patient data from first argument to destination database (4th arg)
     // This function also merges treatments by checking for duplicate entries
-    private int CopyPatListToDB(List<Patient> patList, SQLiteDatabase sdb, SQLiteDatabase ddb) {
+    private int CopyPatListToDB(List<Patient> patList, TreatmentDB treatDB, SQLiteDatabase sdb,
+                                SQLiteDatabase ddb) {
         int copy_count = 0;
         String src_table;
-        TreatmentDB treatDB = new TreatmentDB(mContext);
+        //TreatmentDB treatDB = new TreatmentDB(mContext);
         List<Patient> dstPatList = GetPatientListFromDB(null, null, ddb);
         boolean patient_in_dst_db;
 
@@ -322,9 +334,6 @@ public class PatientDB extends SQLiteOpenHelper{
 
             // Check if the patient already exist in destination database
             for (Patient dpat: dstPatList) {
-                //if ((dpat.Uid.equals(pat.Uid)) ||
-                //        (dpat.Name.equals(pat.Name) && dpat.Phone.equals(pat.Phone))) {
-                    // FIXME: The intent of the above code is to merge patients with different entries, doesn't work!!
                 if ((dpat.Uid.equals(pat.Uid))) {
                     patient_in_dst_db = true;
                     break;
@@ -333,6 +342,7 @@ public class PatientDB extends SQLiteOpenHelper{
 
             if (!patient_in_dst_db) {
                 // Add patient details to destination database
+                createPatientTableIfNotExist(ddb, PATIENT_LIST);
                 copy_count += AddPatientToDB(pat, ddb);
                 dstPatList.add(pat); // this will help removing any redundant names in incoming db!
             }
@@ -351,12 +361,12 @@ public class PatientDB extends SQLiteOpenHelper{
     }
 
 
-    public String mergeDB(String inpath) {
+    public String mergeDB(String inpath, TreatmentDB treatDB) {
         String storagepath = Environment.getExternalStorageDirectory().toString();
         String newdbpath = storagepath + "/Download/TEMP.db";
         String inputdbpath = storagepath + inpath;
         SQLiteDatabase dbi, dbn; // input, new
-        SQLiteDatabase dbm = this.getReadableDatabase(); // main or current
+        SQLiteDatabase dbm = this.getWritableDatabase(); // main or current
 
         String query;
         int total_records, copied_records = 0;
@@ -373,9 +383,9 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // Copy patient records to new database
         mainPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbm); // from main database
-        copied_records += CopyPatListToDB(mainPatList, dbm, dbn);
+        copied_records += CopyPatListToDB(mainPatList, treatDB, dbm, dbn);
         impoPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbi); // from input database
-        copied_records += CopyPatListToDB(impoPatList, dbi, dbn);
+        copied_records += CopyPatListToDB(impoPatList, treatDB, dbi, dbn);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d(TAG, "Total patients added: "+ copied_records + " out of " + total_records);
         mDbChanged = true;

@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private String mSrchstr;
     private Boolean initialPatRenderingDone = false;
 
+    private Handler importDB_Handler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -716,45 +718,55 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void importDB(String inpath) {
         // first backup the current data
         doDatabaseBackup("prms-last-backup.db", true);
+        Toast.makeText(getBaseContext(), "Merging databases is happening in background",
+                Toast.LENGTH_LONG).show();
+        final String inPath = inpath;
 
-        // merging starts from Patients so that their treatment and doctors are merged
-        String merged_filepath = patientDB.mergeDB(inpath);
+        importDB_Handler = new Handler();
+        final Runnable r = new Runnable() {
+            public void run() {
+                // merging starts from Patients so that their treatment and doctors are merged
+                final String merged_filepath = patientDB.mergeDB(inPath, treatmentDB);
 
-        // closes databases so that the user will be forced to re-login to re-init databases
-        treatmentDB.close();
-        patientDB.close();
-        doctorDB.close();
+                // closes databases so that the user will be forced to re-login to re-init databases
+                treatmentDB.close();
+                patientDB.close();
+                doctorDB.close();
 
-        try {
-            File data  = Environment.getDataDirectory();
+                try {
+                    File data  = Environment.getDataDirectory();
 
-            if (isExternalStorageWritable()) {
-                String  appDBpath = "/data/" + PACKAGE_NAME + "/databases/" + MAIN_DATABASE;
-                File out_file = new File(data, appDBpath);
-                File in_file = new File(merged_filepath);
+                    if (isExternalStorageWritable()) {
+                        String  appDBpath = "/data/" + PACKAGE_NAME + "/databases/" + MAIN_DATABASE;
+                        File out_file = new File(data, appDBpath);
+                        File in_file = new File(merged_filepath);
 
-                FileChannel dst = new FileOutputStream(out_file).getChannel();
-                FileChannel src = new FileInputStream(in_file).getChannel();
-                Log.i(TAG, "Importing "+ src.size()+ " bytes from "+merged_filepath+
-                        " to "+ appDBpath );
-                dst.transferFrom(src, 0, src.size());
-                src.close();
-                dst.close();
-                in_file.delete(); // delete temp file
-                doDatabaseBackup(BACKUPFILE, true);
+                        FileChannel dst = new FileOutputStream(out_file).getChannel();
+                        FileChannel src = new FileInputStream(in_file).getChannel();
+                        Log.i(TAG, "Importing "+ src.size()+ " bytes from "+merged_filepath+
+                                " to "+ appDBpath );
+                        dst.transferFrom(src, 0, src.size());
+                        src.close();
+                        dst.close();
+                        in_file.delete(); // delete temp file
+                        doDatabaseBackup(BACKUPFILE, true);
+                    }
+                    else {
+                        Log.d(TAG, "importDB(): Can't write into external storage!");
+                    }
+                } catch (Exception e) {
+                    Log.d(TAG, "importDB(): Got exception! "+ e.toString());
+                }
+
+                Log.d(TAG, "importDB(): Finished import+merge; restarting MainActivity!");
+                // Restart the app to read the new imported Database
+                Intent i = getBaseContext().getPackageManager()
+                        .getLaunchIntentForPackage( getBaseContext().getPackageName() );
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                finish();
+                startActivity(i);
             }
-            else {
-                Log.d(TAG, "exportDB(): Can't write into external storage!");
-            }
-        } catch (Exception e) {
-            Log.d(TAG, "Got exception! "+ e.toString());
-        }
-
-        // Restart the app to read the new imported Database
-        Intent i = getBaseContext().getPackageManager()
-                .getLaunchIntentForPackage( getBaseContext().getPackageName() );
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        finish();
-        startActivity(i);
+        };
+        importDB_Handler.postDelayed(r, 100);
     }
 }

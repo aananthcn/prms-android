@@ -57,30 +57,43 @@ public class TreatmentDB extends SQLiteOpenHelper {
                 "complaint VARCHAR(2048), prescription VARCHAR(2048), doctor VARCHAR(100) )";
 
         Log.d(TAG, query);
-        db.execSQL(query);
+        try {
+            db.execSQL(query);
+        }
+        catch (Exception e) {
+            // For Disk I/O issue let us give a 2nd chance
+            db.execSQL(query);
+        }
     }
 
 
     public void AddTreatment(Treatment treat) {
         SQLiteDatabase db = this.getWritableDatabase();
 
+        String tablename = treat.patient.Uid;
+        createTreatmentTableIfNotExist(db, tablename); // moved outside of AddTreatmentToDB to gain performance
         AddTreatmentToDB(db, treat);
+
         db.close();
     }
 
 
     public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat) {
-        String tablename;
-
-        tablename = treat.patient.Uid;
-        createTreatmentTableIfNotExist(db, tablename);
+        String tablename = treat.patient.Uid;
+        //createTreatmentTableIfNotExist(db, tablename);
 
         String query = "INSERT INTO " + tablename + " (date, complaint, prescription, doctor) VALUES ('" +
                 treat.date + "', '" + treat.complaint + "', '" + treat.prescription + "', '" +
                 treat.doctor + "')";
 
         Log.d(TAG, query + " on " + db.getPath());
-        db.execSQL(query);
+        try {
+            db.execSQL(query);
+        }
+        catch (Exception e) {
+            // Sometimes Disk I/O exceptions happens. Just give 2nd chance!
+            db.execSQL(query);
+        }
 
         mDbChanged = true;
     }
@@ -141,6 +154,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
         // check if treatment table exists in the current input database
         query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tablename + "'";
+        Log.d(TAG, query);
         res = db.rawQuery(query, null);
         if ((res == null) || (res.getCount() <= 0)) {
             Log.d(TAG, "Treatment table " + tablename + " doesn't exist for " + pat.Name + "!");
@@ -152,9 +166,15 @@ public class TreatmentDB extends SQLiteOpenHelper {
         }
         res.close();
 
-        // read all treatments for this patient from this input database
-        query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + desc;
-        res = db.rawQuery(query, null);
+        try {
+            // read all treatments for this patient from this input database
+            query = "SELECT * FROM " + tablename + " ORDER BY " + TREAT_ID + desc;
+            res = db.rawQuery(query, null);
+        }
+        catch (Exception e) {
+            query = "SELECT * FROM " + tablename + desc;
+            res = db.rawQuery(query, null);
+        }
 
         res.moveToFirst();
         if (res.getCount() <= 0) {
@@ -258,6 +278,10 @@ public class TreatmentDB extends SQLiteOpenHelper {
         srcList = GetTreatmentListFromDB(sdb, pat, ListOrder.ASCENDING);
         Log.d(TAG, ddb.getPath());
         dstList = GetTreatmentListFromDB(ddb, pat, ListOrder.ASCENDING);
+
+        // Create table outside the for loop
+        String tablename = pat.Uid;
+        createTreatmentTableIfNotExist(ddb, tablename);
 
         // Check for redundancy and add imported records to destination database
         int count = 0;
