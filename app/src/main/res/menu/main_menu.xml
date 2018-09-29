@@ -9,6 +9,9 @@
         android:id="@+id/prescription_search"
         android:title="Search Prescriptions" />
     <item
+        android:id="@+id/find_duplicates"
+        android:title="Find Duplicate Patients" />
+    <item
         android:id="@+id/statistics_pat"
         android:title="Patients Statistics" />
     <item

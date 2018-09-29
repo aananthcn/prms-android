@@ -23,6 +23,8 @@ public class PatientDB extends SQLiteOpenHelper{
     private Context mContext;
     private boolean mDbChanged = false;
     private String TAG = "PRMS-PatientDB";
+    private String strStatMajor = "Idle";
+    private String strStatMinor = "";
 
 
     public PatientDB(Context context) {
@@ -326,6 +328,8 @@ public class PatientDB extends SQLiteOpenHelper{
         boolean patient_in_dst_db;
 
         // Merge treatments for every patients
+        int i = 0;
+        int total = patList.size();
         for (Patient pat: patList) {
             Log.d(TAG, pat.Name);
             patient_in_dst_db = false;
@@ -354,6 +358,8 @@ public class PatientDB extends SQLiteOpenHelper{
                 Log.d(TAG, "Merged " + treat_cnt + " treatments for patient " + pat.Name +
                         " from " + sdb.getPath() + " to " + ddb.getPath() + "!");
             }
+            i++;
+            strStatMinor = " " + i + " out of " + total;
         }
         Log.d(TAG, "Merged / added " + copy_count + " patients!");
 
@@ -382,9 +388,13 @@ public class PatientDB extends SQLiteOpenHelper{
         dbn.execSQL(query);
 
         // Copy patient records to new database
+        strStatMajor = "Reading patients (main database): ";
         mainPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbm); // from main database
+        strStatMajor = "Copying patients (main) to new database: ";
         copied_records += CopyPatListToDB(mainPatList, treatDB, dbm, dbn);
+        strStatMajor = "Reading patients (incoming database): ";
         impoPatList = GetPatientListFromDB(null, ListOrder.ASCENDING, dbi); // from input database
+        strStatMajor = "Copying patients (incoming) to new database: ";
         copied_records += CopyPatListToDB(impoPatList, treatDB, dbi, dbn);
         total_records = mainPatList.size() + impoPatList.size();
         Log.d(TAG, "Total patients added: "+ copied_records + " out of " + total_records);
@@ -392,7 +402,10 @@ public class PatientDB extends SQLiteOpenHelper{
 
         // Copy doctor records to new database
         DoctorDB dctDB = new DoctorDB(mContext);
+        strStatMinor = ""; // not required as the number of doctors are less
+        strStatMajor = "Merging doctors from main database";
         dctDB.mergeDoctorsToDB(dbm, dbn);
+        strStatMajor = "Merging doctors from incoming database";
         dctDB.mergeDoctorsToDB(dbi, dbn);
 
         dbn.close();
@@ -400,6 +413,11 @@ public class PatientDB extends SQLiteOpenHelper{
         dbm.close();
 
         return newdbpath;
+    }
+
+
+    public String getStatusString() {
+        return strStatMajor + strStatMinor;
     }
 
 

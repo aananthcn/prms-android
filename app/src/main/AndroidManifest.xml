@@ -29,7 +29,8 @@
         <activity android:name=".PatStatisticsActivity" />
         <activity android:name=".PatientAddEditActivity" />
         <activity android:name=".LoginActivity" />
-        <activity android:name=".DoctorAddEditActivity"></activity>
+        <activity android:name=".DoctorAddEditActivity" />
+        <activity android:name=".DbMgmtActivity"></activity>
     </application>
 
 </manifest>
