@@ -241,7 +241,14 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
         // check if treatment table exists in the current input database
         query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tablename + "'";
-        res = db.rawQuery(query, null);
+
+        try {
+            res = db.rawQuery(query, null);
+        }
+        catch (Exception e) {
+            // given another chance
+            res = db.rawQuery(query, null);
+        }
         if ((res == null) || (res.getCount() <= 0)) {
             Log.d(TAG, "Treatment table " + tablename + " doesn't exist!");
             res.close();

@@ -1,6 +1,8 @@
 package com.nonprofit.aananth.prms;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +15,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -43,6 +46,7 @@ public class DbMgmtActivity extends AppCompatActivity {
     private Boolean mActivityStarted = false;
     private enum findDuplStates {FD_IDLE, FD_GETUI, FD_GETUI_INPROG, FD_ACTION_REQUESTED};
     private findDuplStates mFdState = findDuplStates.FD_IDLE;
+    private AsyncTask<Void, Void, Void> mFindDuplBkGndTask;
 
     static private Boolean dbOperationActive = false;
     static private Boolean fDupOperationActive = false;
@@ -66,9 +70,19 @@ public class DbMgmtActivity extends AppCompatActivity {
     }
 
 
+    private void myfinish() {
+        Log.d(TAG, "myfinsh()");
+        dbOperationActive = false;
+        fDupOperationActive = false;
+        patStatOperationActive = false;
+        mFdState = findDuplStates.FD_IDLE;
+        finish();
+    }
+
     public void onResume() {
         super.onResume();
 
+        Log.d(TAG, "onResume()");
         if (mActivityStarted) {
             return;
         }
@@ -82,31 +96,41 @@ public class DbMgmtActivity extends AppCompatActivity {
         mDbActMessageText = (EditText) findViewById(R.id.dbActMessage);
 
         if (str.equals("import database")) {
+            Log.d(TAG, "onResume(): Import Database");
             mDbActMessageText.setText("Importing Database ...");
             int action = (int) intent.getSerializableExtra("action");
+            setTitle("Import Database");
             createFileOpenDialog(action);
         }
         else if (str.equals("export database")) {
+            Log.d(TAG, "onResume(): Export Database");
             mDbActMessageText.setText("Exporting Database ...");
             int action = (int) intent.getSerializableExtra("action");
+            setTitle("Export Database");
             createFileOpenDialog(action);
         }
         else if (str.equals("backup database")) {
+            Log.d(TAG, "onResume(): Backup Database");
             mDbActMessageText.setText("Backing up database...");
+            setTitle("Backup Database");
             doDatabaseBackup(BACKUPFILE, true);
-            finish();
+            myfinish();
         }
         else if (str.equals("find duplicates")) {
+            Log.d(TAG, "onResume(): Find Duplicates");
             mDbActMessageText.setText("Finding duplicates in Patient Database ...");
+            setTitle("Find Duplicates");
             FindDuplicatePatients();
         }
         else if (str.equals("patient statistics")) {
+            Log.d(TAG, "onResume(): Patient Statistics");
             mDbActMessageText.setText("Parsing patient database ...");
             String searchStr = intent.getStringExtra("search string");
+            setTitle("Patient Statistics");
             ShowPatientStatistics(searchStr);
         }
         else {
-            Log.d(TAG, "onCreate: Error illegal EXTRA_MESSAGE");
+            Log.d(TAG, "onResume(): Error illegal EXTRA_MESSAGE");
         }
     }
 
@@ -293,7 +317,7 @@ public class DbMgmtActivity extends AppCompatActivity {
                 Intent i = getBaseContext().getPackageManager()
                         .getLaunchIntentForPackage( getBaseContext().getPackageName() );
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                finish();
+                myfinish();
                 startActivity(i);
             }
         });
@@ -362,7 +386,7 @@ public class DbMgmtActivity extends AppCompatActivity {
                 intent.putExtra("patient statistics", pstat);
                 setResult(RESULT_OK, intent);
                 patStatOperationActive = false;
-                finish();
+                myfinish();
             }
         });
     }
@@ -412,7 +436,7 @@ public class DbMgmtActivity extends AppCompatActivity {
                         path = convertUriToFilePath(uri);
                         Log.i(TAG, "Create file: " + path);
                         exportDB(path);
-                        finish();
+                        myfinish();
                     }
                 }
                 break;
@@ -430,18 +454,24 @@ public class DbMgmtActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     private void FindDuplicatePatients() {
+        Log.d(TAG, "FindDuplicatePatients()");
         final List<Patient> patientList = mPatientDB.GetPatientList(null, ListOrder.REVERSE);
 
         mEditBoxStr = "...";
         fDupOperationActive = true;
         runUiUpdateFindDuplThread();
-        AsyncTask.execute(new Runnable() {
+
+        mFindDuplBkGndTask = new AsyncTask<Void, Void, Void>() {
             @Override
-            public void run() {
+            protected Void doInBackground(Void... voids) {
+                Log.d(TAG, "FindDuplicatePatients() : entering doInBackground() thread!");
                 List<Patient> removedPats = new ArrayList<>();
                 List<Patient> duplicaList;
                 int i = 0, total;
+                Boolean exitBackgroundTask = false;
+                Boolean dbDirtyFlag = false;
 
                 total = patientList.size();
                 mEditBoxStr = "Parsing: " + i + " out of " + total + " patients";
@@ -496,6 +526,17 @@ public class DbMgmtActivity extends AppCompatActivity {
                             catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
+
+                            if (isCancelled()) {
+                                Log.d(TAG, "Exiting doInBackground()::while loop!");
+                                exitBackgroundTask = true;
+                                break;
+                            }
+                        }
+
+                        if (exitBackgroundTask) {
+                            Log.d(TAG, "Exiting doInBackground()::for loop (duplicate)!");
+                            break;
                         }
 
                         if (mFdState == findDuplStates.FD_ACTION_REQUESTED) {
@@ -508,26 +549,46 @@ public class DbMgmtActivity extends AppCompatActivity {
 
                             // Remove patient from main database
                             mPatientDB.DeletePatient(dup);
+                            dbDirtyFlag = true;
                             removedPats.add(dup);
                             removedPats.add(pat);
                             mFdState = findDuplStates.FD_IDLE;
                         }
                     }
                     mEditBoxStr = "Parsing: " + i + " out of " + total + " patients";
+                    if (exitBackgroundTask) {
+                        Log.d(TAG, "Exiting doInBackground()::for loop (main loop)!");
+                        break;
+                    }
                 }
+                Log.d(TAG, "FindDuplicatePatients(): exiting doInBackground() thread!");
                 fDupOperationActive = false;
-                Intent intent = getBaseContext().getPackageManager()
-                        .getLaunchIntentForPackage( getBaseContext().getPackageName() );
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                finish();
-                startActivity(intent);
+                if (dbDirtyFlag) {
+                    dbDirtyFlag = false;
+                    Intent intent = getBaseContext().getPackageManager()
+                            .getLaunchIntentForPackage(getBaseContext().getPackageName());
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    myfinish();
+                    startActivity(intent);
+                }
+                return null;
+            }
+        }.execute();
+
+        /*
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
             }
         });
+        */
     }
 
     private void runUiUpdateFindDuplThread() {
+        Log.d(TAG, "runUiUpdateFindDuplThread()");
         new Thread() {
             public void run() {
+                Log.d(TAG, "runUiUpdateFindDuplThread() : run() thread!");
                 while (fDupOperationActive) {
                     try {
                         runOnUiThread(new Runnable() {
@@ -553,6 +614,18 @@ public class DbMgmtActivity extends AppCompatActivity {
                                     });
 
                                     AlertDialog dialog = builder.create();
+                                    dialog.setOnKeyListener(new Dialog.OnKeyListener() {
+                                        @Override
+                                        public boolean onKey(DialogInterface arg0, int keyCode,
+                                                             KeyEvent event) {
+                                            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                                                mFindDuplBkGndTask.cancel(true);
+                                                dialog.dismiss();
+                                                myfinish();
+                                            }
+                                            return true;
+                                        }
+                                    });
                                     dialog.show();
                                 }
                             }
@@ -562,7 +635,13 @@ public class DbMgmtActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+                Log.d(TAG, "runUiUpdateFindDuplThread() : exiting while loop!");
             }
         }.start();
+    }
+
+    @Override
+    public void onBackPressed() {
+        myfinish();
     }
 }
