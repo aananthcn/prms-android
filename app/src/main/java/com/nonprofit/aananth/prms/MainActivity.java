@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static final int OPEN_FILE = 102;
     public static final int MY_PERMISSION_REQUEST = 103;
     public static final int LOGIN_ACTIVITY = 104;
+    public static final int MERGE_PATIENT_CMD = 105;
 
     // Aananth added these member variables
     private String TAG = "PRMS-MainActivity";

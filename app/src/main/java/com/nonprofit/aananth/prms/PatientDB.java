@@ -276,7 +276,8 @@ public class PatientDB extends SQLiteOpenHelper{
 
             //Log.d(TAG, "Name = "+ name + ", Phone: "+phone+", Email = "+email);
             pat = new Patient(name, phone, email, gender, pid, uid);
-            if (treatDB.TreatmentCheck(db, pat, complaint, prescription) == true) {
+            String treatTableName = pat.Uid;
+            if (treatDB.TreatmentCheck(db, treatTableName, complaint, prescription) == true) {
                 patientList.add(pat);
             }
 

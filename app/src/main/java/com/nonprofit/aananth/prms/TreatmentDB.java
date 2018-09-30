@@ -72,15 +72,27 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
         String tablename = treat.patient.Uid;
         createTreatmentTableIfNotExist(db, tablename); // moved outside of AddTreatmentToDB to gain performance
-        AddTreatmentToDB(db, treat);
+        AddTreatmentToDB(db, treat, tablename);
 
         db.close();
     }
 
 
-    public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat) {
-        String tablename = treat.patient.Uid;
-        //createTreatmentTableIfNotExist(db, tablename);
+    public void AddTreatmentToPatient(Treatment treat, Patient pat) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        String tablename = pat.Uid;
+        createTreatmentTableIfNotExist(db, tablename); // moved outside of AddTreatmentToDB to gain performance
+        AddTreatmentToDB(db, treat, tablename);
+
+        db.close();
+    }
+
+    public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat, String tablename) {
+
+        if(TreatmentCheck(db, tablename, treat.complaint, treat.prescription)) {
+            return;
+        }
 
         String query = "INSERT INTO " + tablename + " (date, complaint, prescription, doctor) VALUES ('" +
                 treat.date + "', '" + treat.complaint + "', '" + treat.prescription + "', '" +
@@ -91,6 +103,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
             db.execSQL(query);
         }
         catch (Exception e) {
+            createTreatmentTableIfNotExist(db, tablename);
             // Sometimes Disk I/O exceptions happens. Just give 2nd chance!
             db.execSQL(query);
         }
@@ -219,19 +232,18 @@ public class TreatmentDB extends SQLiteOpenHelper {
     }
 
 
-    public boolean TreatmentCheck(SQLiteDatabase db, Patient pat, String compl, String presc) {
+    public boolean TreatmentCheck(SQLiteDatabase db, String tablename, String compl, String presc) {
         Cursor res = null;
-        String tablename, query;
+        String query;
         Boolean treatment_found = false;
 
         Log.d(TAG, "GetTreatmentListFromdDB(): dbname = " + db.getPath());
-        tablename = pat.Uid;
 
         // check if treatment table exists in the current input database
         query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tablename + "'";
         res = db.rawQuery(query, null);
         if ((res == null) || (res.getCount() <= 0)) {
-            Log.d(TAG, "Treatment table " + tablename + " doesn't exist for " + pat.Name + "!");
+            Log.d(TAG, "Treatment table " + tablename + " doesn't exist!");
             res.close();
             return false;
         }
@@ -257,7 +269,8 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
         res.moveToFirst();
         if (res.getCount() <= 0) {
-            Log.d(TAG, "No treatment found for this patient: " + pat.Name + "!");
+            Log.d(TAG, "No treatment found with complaint = " + compl + ", presc = " +
+                    presc + " in " + tablename);
             treatment_found = false;
         }
         else {
@@ -289,7 +302,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
             if (trt.patient.Name.equals("Empty"))
                 continue;
             if (!isTreatmentExist(trt, dstList)) {
-                AddTreatmentToDB(ddb, trt);
+                AddTreatmentToDB(ddb, trt, tablename);
                 dstList.add(trt);
                 count++;
             }

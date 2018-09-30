@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId "com.nonprofit.aananth.prms"
         minSdkVersion 23
-        targetSdkVersion 26
+        targetSdkVersion 25
         versionCode 14
         versionName "2.3"
 
@@ -51,6 +51,10 @@ android {
         }
     }
     productFlavors {
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 

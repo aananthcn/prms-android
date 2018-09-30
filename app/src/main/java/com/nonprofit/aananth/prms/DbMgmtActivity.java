@@ -2,17 +2,21 @@ package com.nonprofit.aananth.prms;
 
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.android.internal.util.Predicate;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +24,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
 import static com.nonprofit.aananth.prms.MainActivity.CREATE_FILE;
@@ -33,7 +41,11 @@ public class DbMgmtActivity extends AppCompatActivity {
     private String TAG = "PRMS-DbMgmtActivity";
     private String BACKUPFILE = "prms-backup.db";
     private EditText dbActMessageText;
+    private String mDialogStr;
     private Boolean activityStarted = false;
+    private enum findDuplStates {FD_IDLE, FD_GETUI, FD_GETUI_INPROG, FD_ACTION_REQUESTED};
+    private findDuplStates mFdState = findDuplStates.FD_IDLE;
+
     static private Boolean dbOperationActive = false;
 
     private DoctorDB doctorDB;
@@ -87,6 +99,7 @@ public class DbMgmtActivity extends AppCompatActivity {
         }
         else if (str.equals("find duplicates")) {
             dbActMessageText.setText("Finding duplicates in Patient Database ...");
+            FindDuplicatePatients();
         }
         else {
             Log.d(TAG, "onCreate: Error illegal EXTRA_MESSAGE");
@@ -188,15 +201,6 @@ public class DbMgmtActivity extends AppCompatActivity {
         return outpath;
     }
 
-    /*
-    private Date getFileDate(String fpath) {
-        File file = new File(fpath);
-        Date lastModDate = new Date(file.lastModified());
-
-        Log.d(TAG, "File " + fpath + " modified date: " + lastModDate.toString());
-        return lastModDate;
-    }
-    */
 
     // This function copies the MAIN_DATABASE used by this app to external storage path
     private void exportDB(String outpath) {
@@ -242,7 +246,7 @@ public class DbMgmtActivity extends AppCompatActivity {
         final String inPath = inpath;
 
         dbOperationActive = true;
-        runUiUpdateThread();
+        runUiUpdateGenThread();
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
@@ -279,19 +283,19 @@ public class DbMgmtActivity extends AppCompatActivity {
                     Log.d(TAG, "importDB(): Got exception! "+ e.toString());
                 }
 
+                dbOperationActive = false;
                 Log.d(TAG, "importDB(): Finished import+merge; restarting MainActivity!");
                 // Restart the app to read the new imported Database
                 Intent i = getBaseContext().getPackageManager()
                         .getLaunchIntentForPackage( getBaseContext().getPackageName() );
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                dbOperationActive = false;
                 finish();
                 startActivity(i);
             }
         });
     }
 
-    private void runUiUpdateThread() {
+    private void runUiUpdateGenThread() {
         new Thread() {
             public void run() {
                 while (dbOperationActive) {
@@ -352,5 +356,133 @@ public class DbMgmtActivity extends AppCompatActivity {
                 }
                 break;
         }
+    }
+
+    private void FindDuplicatePatients() {
+        final List<Patient> patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+
+        dbOperationActive = true;
+        runUiUpdateFindDuplThread();
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                List<Patient> removedPats = new ArrayList<>();
+                List<Patient> duplicaList;
+
+                // find all duplicates...
+                for (final Patient pat : patientList) {
+                    // This function finds duplicates based on phone number. A valid phone number is
+                    // critical to find duplicates.
+                    final String phone = pat.Phone;
+                    if (phone.length() < 8 || phone.length() > 15) {
+                        continue; // invalid phone, so move to next patient
+                    }
+
+                    duplicaList = patientDB.GetPatientList(phone, null);
+
+                    for (final Patient dup : duplicaList) {
+                        Boolean is_removed;
+
+                        if (duplicaList.size() <= 1) {
+                            continue; // duplicate makes sense only if there are more than 1
+                        }
+
+                        // ignore if the duplicate and patient are same
+                        if (dup.Pid.equals(pat.Pid)) {
+                            continue;
+                        }
+
+                        // ignore if a patient is already removed in previous iteration
+                        is_removed = false;
+                        for (final Patient remPat : removedPats) {
+                            if (dup.Pid.equals(remPat.Pid)) {
+                                is_removed = true;
+                                break;
+                            }
+                        }
+                        if (is_removed) {
+                            continue;
+                        }
+
+                        // get ready to prompt user for merge
+                        mDialogStr = "Shall I merge \"" + dup.Name + ": " + dup.Phone + "\" " +
+                                " ==> \"" + pat.Name + ": " + pat.Phone + "\"" + " ?";
+                        mFdState = findDuplStates.FD_GETUI;
+
+                        // wait infinitely till user say 'merge' or 'skip' in UI dialog raised
+                        // by runUiUpdateFindDuplThread() function
+                        while (mFdState == findDuplStates.FD_GETUI ||
+                                mFdState == findDuplStates.FD_GETUI_INPROG) {
+                            try {
+                                Thread.sleep(200);
+                            }
+                            catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        if (mFdState == findDuplStates.FD_ACTION_REQUESTED) {
+                            List<Treatment> dupTrtList = treatmentDB.GetTreatmentList(dup, null);
+                            for (Treatment trt : dupTrtList) {
+                                if (!trt.complaint.equalsIgnoreCase("Empty")) {
+                                    treatmentDB.AddTreatmentToPatient(trt, pat);
+                                }
+                            }
+
+                            // Remove patient from main database
+                            patientDB.DeletePatient(dup);
+                            removedPats.add(dup);
+                            removedPats.add(pat);
+                            mFdState = findDuplStates.FD_IDLE;
+                        }
+                    }
+                }
+                dbOperationActive = false;
+                Intent i = getBaseContext().getPackageManager()
+                        .getLaunchIntentForPackage( getBaseContext().getPackageName() );
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                finish();
+                startActivity(i);
+            }
+        });
+    }
+
+    private void runUiUpdateFindDuplThread() {
+        new Thread() {
+            public void run() {
+                while (dbOperationActive) {
+                    try {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (mFdState == findDuplStates.FD_GETUI) {
+                                    mFdState = findDuplStates.FD_GETUI_INPROG;
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(DbMgmtActivity.this);
+                                    builder.setMessage(mDialogStr);
+                                    builder.setPositiveButton("No", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // User clicked ok button
+                                            mFdState = findDuplStates.FD_IDLE;
+                                        }
+                                    });
+                                    builder.setNegativeButton("Merge", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // User cancelled the dialog
+                                            mFdState = findDuplStates.FD_ACTION_REQUESTED;
+                                        }
+                                    });
+
+                                    AlertDialog dialog = builder.create();
+                                    dialog.show();
+                                }
+                            }
+                        });
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
     }
 }
