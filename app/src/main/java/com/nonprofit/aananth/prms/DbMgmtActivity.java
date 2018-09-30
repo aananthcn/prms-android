@@ -16,8 +16,6 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.android.internal.util.Predicate;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,7 +24,6 @@ import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
@@ -40,17 +37,20 @@ import static com.nonprofit.aananth.prms.PatientDB.MAIN_DATABASE;
 public class DbMgmtActivity extends AppCompatActivity {
     private String TAG = "PRMS-DbMgmtActivity";
     private String BACKUPFILE = "prms-backup.db";
-    private EditText dbActMessageText;
+    private EditText mDbActMessageText;
     private String mDialogStr;
-    private Boolean activityStarted = false;
+    private String mEditBoxStr;
+    private Boolean mActivityStarted = false;
     private enum findDuplStates {FD_IDLE, FD_GETUI, FD_GETUI_INPROG, FD_ACTION_REQUESTED};
     private findDuplStates mFdState = findDuplStates.FD_IDLE;
 
     static private Boolean dbOperationActive = false;
+    static private Boolean fDupOperationActive = false;
+    static private Boolean patStatOperationActive = false;
 
-    private DoctorDB doctorDB;
-    private PatientDB patientDB;
-    private TreatmentDB treatmentDB;
+    private DoctorDB mDoctorDB;
+    private PatientDB mPatientDB;
+    private TreatmentDB mTreatmentDB;
 
     //private Handler importDB_Handler;
 
@@ -60,46 +60,50 @@ public class DbMgmtActivity extends AppCompatActivity {
         setContentView(R.layout.activity_db_mgmt);
 
         // Establish connections to databases
-        patientDB = new PatientDB(this);
-        treatmentDB = new TreatmentDB(this);
-        doctorDB = new DoctorDB(this);
-
+        mPatientDB = new PatientDB(this);
+        mTreatmentDB = new TreatmentDB(this);
+        mDoctorDB = new DoctorDB(this);
     }
 
 
     public void onResume() {
         super.onResume();
 
-        if (activityStarted) {
+        if (mActivityStarted) {
             return;
         }
         else {
-            activityStarted = true;
+            mActivityStarted = true;
         }
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
         String str = intent.getStringExtra(EXTRA_MESSAGE);
-        dbActMessageText = (EditText) findViewById(R.id.dbActMessage);
+        mDbActMessageText = (EditText) findViewById(R.id.dbActMessage);
 
         if (str.equals("import database")) {
-            dbActMessageText.setText("Importing Database ...");
+            mDbActMessageText.setText("Importing Database ...");
             int action = (int) intent.getSerializableExtra("action");
             createFileOpenDialog(action);
         }
         else if (str.equals("export database")) {
-            dbActMessageText.setText("Exporting Database ...");
+            mDbActMessageText.setText("Exporting Database ...");
             int action = (int) intent.getSerializableExtra("action");
             createFileOpenDialog(action);
         }
         else if (str.equals("backup database")) {
-            dbActMessageText.setText("Backing up database...");
+            mDbActMessageText.setText("Backing up database...");
             doDatabaseBackup(BACKUPFILE, true);
             finish();
         }
         else if (str.equals("find duplicates")) {
-            dbActMessageText.setText("Finding duplicates in Patient Database ...");
+            mDbActMessageText.setText("Finding duplicates in Patient Database ...");
             FindDuplicatePatients();
+        }
+        else if (str.equals("patient statistics")) {
+            mDbActMessageText.setText("Parsing patient database ...");
+            String searchStr = intent.getStringExtra("search string");
+            ShowPatientStatistics(searchStr);
         }
         else {
             Log.d(TAG, "onCreate: Error illegal EXTRA_MESSAGE");
@@ -112,14 +116,14 @@ public class DbMgmtActivity extends AppCompatActivity {
         String backuppath = getBackupFilePath(backupfile);
 
         // save backups if any database failed
-        if (patientDB.isDbChanged() || treatmentDB.isDbChanged() || doctorDB.isDbChanged() || force) {
+        if (mPatientDB.isDbChanged() || mTreatmentDB.isDbChanged() || mDoctorDB.isDbChanged() || force) {
             Log.d(TAG, "onPause: creating " + backuppath);
 
             // backup databases and notify the event to all DB interface classes
             this.exportDB(backuppath);
-            patientDB.DbSaved();
-            treatmentDB.DbSaved();
-            doctorDB.DbSaved();
+            mPatientDB.DbSaved();
+            mTreatmentDB.DbSaved();
+            mDoctorDB.DbSaved();
             Toast.makeText(getBaseContext(), "Database backed up to " + backupfile,
                     Toast.LENGTH_SHORT).show();
         }
@@ -246,17 +250,17 @@ public class DbMgmtActivity extends AppCompatActivity {
         final String inPath = inpath;
 
         dbOperationActive = true;
-        runUiUpdateGenThread();
+        runImpExpUiUpdateThread();
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 // merging starts from Patients so that their treatment and doctors are merged
-                final String merged_filepath = patientDB.mergeDB(inPath, treatmentDB);
+                final String merged_filepath = mPatientDB.mergeDB(inPath, mTreatmentDB);
 
                 // closes databases so that the user will be forced to re-login to re-init databases
-                treatmentDB.close();
-                patientDB.close();
-                doctorDB.close();
+                mTreatmentDB.close();
+                mPatientDB.close();
+                mDoctorDB.close();
 
                 try {
                     File data  = Environment.getDataDirectory();
@@ -295,7 +299,7 @@ public class DbMgmtActivity extends AppCompatActivity {
         });
     }
 
-    private void runUiUpdateGenThread() {
+    private void runImpExpUiUpdateThread() {
         new Thread() {
             public void run() {
                 while (dbOperationActive) {
@@ -303,8 +307,76 @@ public class DbMgmtActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                String str = patientDB.getStatusString();
-                                dbActMessageText.setText(str);
+                                String str = mPatientDB.getStatusString();
+                                mDbActMessageText.setText(str);
+                            }
+                        });
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+    }
+
+
+    //   P A T I E N T   S T A T I S T I C S
+    private void ShowPatientStatistics(String searchStr) {
+        patStatOperationActive = true;
+        runPatStatUiUpdateThread();
+        mEditBoxStr = "Patient statistics: " + "...";
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                String status = "started!";
+                List<Patient> patientList;
+                List<Treatment> tlist;
+                int max_treats, males, females, total_pat, i;
+                Patient top_pat;
+
+                patientList = mPatientDB.GetPatientList(searchStr, ListOrder.REVERSE);
+                males = females = max_treats = i = 0;
+                total_pat = patientList.size();
+                top_pat = patientList.get(0);
+                status = "... ...";
+
+                for (Patient pat : patientList) {
+                    mEditBoxStr = "Parsing " + i + " of " + total_pat + "!";
+                    i++;
+                    if (pat.Gender.equals("Male")) {
+                        males++;
+                    } else if (pat.Gender.equals("Female")) {
+                        females++;
+                    }
+                    tlist = mTreatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
+                    if (tlist.size() > max_treats) {
+                        top_pat = pat;
+                        max_treats = tlist.size();
+                    }
+                }
+
+                PatStatistics pstat = new PatStatistics(total_pat, males, females, top_pat.Name, max_treats);
+                Intent intent = new Intent();
+                intent.putExtra("patient statistics", pstat);
+                setResult(RESULT_OK, intent);
+                patStatOperationActive = false;
+                finish();
+            }
+        });
+    }
+
+
+    private void runPatStatUiUpdateThread() {
+        new Thread() {
+            public void run() {
+                while (patStatOperationActive) {
+                    try {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mDbActMessageText.setText(mEditBoxStr);
                             }
                         });
                         Thread.sleep(250);
@@ -359,26 +431,31 @@ public class DbMgmtActivity extends AppCompatActivity {
     }
 
     private void FindDuplicatePatients() {
-        final List<Patient> patientList = patientDB.GetPatientList(null, ListOrder.REVERSE);
+        final List<Patient> patientList = mPatientDB.GetPatientList(null, ListOrder.REVERSE);
 
-        dbOperationActive = true;
+        mEditBoxStr = "...";
+        fDupOperationActive = true;
         runUiUpdateFindDuplThread();
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 List<Patient> removedPats = new ArrayList<>();
                 List<Patient> duplicaList;
+                int i = 0, total;
 
+                total = patientList.size();
+                mEditBoxStr = "Parsing: " + i + " out of " + total + " patients";
                 // find all duplicates...
                 for (final Patient pat : patientList) {
                     // This function finds duplicates based on phone number. A valid phone number is
                     // critical to find duplicates.
+                    i++;
                     final String phone = pat.Phone;
                     if (phone.length() < 8 || phone.length() > 15) {
                         continue; // invalid phone, so move to next patient
                     }
 
-                    duplicaList = patientDB.GetPatientList(phone, null);
+                    duplicaList = mPatientDB.GetPatientList(phone, null);
 
                     for (final Patient dup : duplicaList) {
                         Boolean is_removed;
@@ -422,27 +499,28 @@ public class DbMgmtActivity extends AppCompatActivity {
                         }
 
                         if (mFdState == findDuplStates.FD_ACTION_REQUESTED) {
-                            List<Treatment> dupTrtList = treatmentDB.GetTreatmentList(dup, null);
+                            List<Treatment> dupTrtList = mTreatmentDB.GetTreatmentList(dup, null);
                             for (Treatment trt : dupTrtList) {
                                 if (!trt.complaint.equalsIgnoreCase("Empty")) {
-                                    treatmentDB.AddTreatmentToPatient(trt, pat);
+                                    mTreatmentDB.AddTreatmentToPatient(trt, pat);
                                 }
                             }
 
                             // Remove patient from main database
-                            patientDB.DeletePatient(dup);
+                            mPatientDB.DeletePatient(dup);
                             removedPats.add(dup);
                             removedPats.add(pat);
                             mFdState = findDuplStates.FD_IDLE;
                         }
                     }
+                    mEditBoxStr = "Parsing: " + i + " out of " + total + " patients";
                 }
-                dbOperationActive = false;
-                Intent i = getBaseContext().getPackageManager()
+                fDupOperationActive = false;
+                Intent intent = getBaseContext().getPackageManager()
                         .getLaunchIntentForPackage( getBaseContext().getPackageName() );
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 finish();
-                startActivity(i);
+                startActivity(intent);
             }
         });
     }
@@ -450,11 +528,13 @@ public class DbMgmtActivity extends AppCompatActivity {
     private void runUiUpdateFindDuplThread() {
         new Thread() {
             public void run() {
-                while (dbOperationActive) {
+                while (fDupOperationActive) {
                     try {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                mDbActMessageText.setText(mEditBoxStr);
+
                                 if (mFdState == findDuplStates.FD_GETUI) {
                                     mFdState = findDuplStates.FD_GETUI_INPROG;
                                     AlertDialog.Builder builder = new AlertDialog.Builder(DbMgmtActivity.this);

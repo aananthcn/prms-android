@@ -57,14 +57,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static final int OPEN_FILE = 102;
     public static final int MY_PERMISSION_REQUEST = 103;
     public static final int LOGIN_ACTIVITY = 104;
-    public static final int MERGE_PATIENT_CMD = 105;
+    public static final int STATISTICS_ACTIVITY = 105;
 
     // Aananth added these member variables
     private String TAG = "PRMS-MainActivity";
     private int currLayout;
     private Doctor mDoctor;
-    private DoctorDB doctorDB;
-    private List<Doctor> mDocList;
+    //private DoctorDB doctorDB;
+    //private List<Doctor> mDocList;
+    //private TreatmentDB treatmentDB;
     Spinner spinner;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
@@ -72,7 +73,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<Patient> mPatientList;
     private Patient mCurrPatient;
     private PatientDB patientDB;
-    private TreatmentDB treatmentDB;
     private Mode mMode, mModePrev;
     private Menu mMenu;
     private String mSrchstr;
@@ -90,8 +90,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mMode = Mode.PERMISSION_GET;
         currLayout = R.layout.login;
         patientDB = new PatientDB(this);
-        treatmentDB = new TreatmentDB(this);
-        doctorDB = new DoctorDB(this);
+        //treatmentDB = new TreatmentDB(this);
+        //doctorDB = new DoctorDB(this);
         mDoctor = new Doctor("Dr. Jegadish", "0", "");
     }
 
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         // On selecting a spinner item
         String item = parent.getItemAtPosition(position).toString();
-        mDoctor = mDocList.get(position);
+        //mDoctor = mDocList.get(position);
 
         // Showing selected spinner item
         Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_SHORT).show();
@@ -332,39 +332,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
 
-    //   P A T I E N T   S T A T I S T I C S
-    public void ShowPatientStatistics() {
-        List<Treatment> tlist;
-        int max_treats, males, females, total_pat;
-        Patient top_pat;
-
-        males = females = max_treats = 0;
-        total_pat = mPatientList.size();
-        top_pat = mCurrPatient;
-
-        for (Patient pat: mPatientList) {
-            if (pat.Gender.equals("Male")) {
-                males++;
-            }
-            else if (pat.Gender.equals("Female")) {
-                females++;
-            }
-            tlist = treatmentDB.GetTreatmentList(pat, ListOrder.ASCENDING);
-            if (tlist.size() > max_treats) {
-                top_pat = pat;
-                max_treats = tlist.size();
-            }
-        }
-
-        PatStatistics pstat = new PatStatistics(total_pat, males, females, top_pat.Name, max_treats);
-
-        Intent intent = new Intent(this, PatStatisticsActivity.class);
-        intent.putExtra("patient statistics", pstat);
-        startActivity(intent);
-    }
-
-
-
     // M E N U   H A N D L I N G
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -382,11 +349,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         switch (item.getItemId()) {
             case R.id.export_db:
                 ExportDatabase();
-                //createFileOpenDialog(CREATE_FILE);
                 return true; // say to android that this menu event is handled here...
             case R.id.import_db:
                 ImportDatabase();
-                //createFileOpenDialog(OPEN_FILE);
                 return true; // say to android that this menu event is handled here...
             case R.id.complaint_search:
                 SwitchToSearchActivity("complaint search");
@@ -431,6 +396,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Intent intent = new Intent(this, DbMgmtActivity.class);
         intent.putExtra(EXTRA_MESSAGE, "find duplicates");
         startActivity(intent);
+    }
+
+    private void ShowPatientStatistics() {
+        Intent intent = new Intent(this, DbMgmtActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, "patient statistics");
+        intent.putExtra("search string", mSrchstr);
+        startActivityForResult(intent, STATISTICS_ACTIVITY);
     }
 
 
@@ -539,11 +511,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                     if (strLoginResult.equalsIgnoreCase("login exit")) {
                         finish();
-                    }
-                    else {
+                    } else {
                         ActivityCompat.invalidateOptionsMenu(MainActivity.this);
                         update_mode(Mode.REND_PAT); // will be rendered inside onResume
                     }
+                }
+                break;
+
+            case STATISTICS_ACTIVITY:
+                if (resultCode == Activity.RESULT_OK) {
+                    Log.d(TAG, "onActivityResult()::STATISTICS_ACTIVITY");
+                    PatStatistics pstat = (PatStatistics)
+                            resultData.getSerializableExtra("patient statistics");
+                    Intent intent = new Intent(this, PatStatisticsActivity.class);
+                    intent.putExtra("patient statistics", pstat);
+                    startActivity(intent);
                 }
                 break;
         }
