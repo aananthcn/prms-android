@@ -90,7 +90,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
 
     public void AddTreatmentToDB(SQLiteDatabase db, Treatment treat, String tablename) {
 
-        if(TreatmentCheck(db, tablename, treat.complaint, treat.prescription)) {
+        if(TreatmentCheck(db, tablename, treat.complaint, treat.prescription, treat.date)) {
             return;
         }
 
@@ -224,7 +224,8 @@ public class TreatmentDB extends SQLiteOpenHelper {
     private boolean isTreatmentExist(Treatment inTrt, List<Treatment> trtList) {
         for (Treatment trt : trtList) {
             Log.d(TAG, trt.date + "==" + inTrt.date + " && " + trt.complaint + "==" + inTrt.complaint);
-            if (trt.date.equals(inTrt.date) && trt.complaint.equals(inTrt.complaint)) {
+            if (trt.date.equals(inTrt.date) && trt.complaint.equals(inTrt.complaint) &&
+                    trt.prescription.equals(inTrt.prescription) && trt.doctor.equals(inTrt.doctor)) {
                 return true;
             }
         }
@@ -232,7 +233,7 @@ public class TreatmentDB extends SQLiteOpenHelper {
     }
 
 
-    public boolean TreatmentCheck(SQLiteDatabase db, String tablename, String compl, String presc) {
+    public boolean FindTreatments(SQLiteDatabase db, String tablename, String compl, String presc) {
         Cursor res = null;
         String query;
         Boolean treatment_found = false;
@@ -257,11 +258,11 @@ public class TreatmentDB extends SQLiteOpenHelper {
         res.close();
 
         // read all matching treatments for this patient from this input database
-        if (presc == null) {
+        if ((presc == null) || presc.equals("")) {
             compl = compl.replaceAll("[^A-Za-z0-9]", "%");
             query = "SELECT * FROM " + tablename + " WHERE complaint LIKE '%" + compl + "%'";
         }
-        else if (compl == null) {
+        else if ((compl == null) || compl.equals("")) {
             presc = presc.replaceAll("[^A-Za-z0-9]", "%");
             query = "SELECT * FROM " + tablename + " WHERE prescription LIKE '%" + presc + "%'";
         }
@@ -270,6 +271,63 @@ public class TreatmentDB extends SQLiteOpenHelper {
             presc = presc.replaceAll("[^A-Za-z0-9]", "%");
             query = "SELECT * FROM " + tablename + " WHERE complaint LIKE '%" + compl +
                     "%' OR prescription LIKE '%" + presc + "%'";
+        }
+        Log.d(TAG, query);
+        res = db.rawQuery(query, null);
+
+        res.moveToFirst();
+        if (res.getCount() <= 0) {
+            Log.d(TAG, "No treatment found with complaint = " + compl + ", presc = " +
+                    presc + " in " + tablename);
+            treatment_found = false;
+        }
+        else {
+            treatment_found = true;
+        }
+        res.close();
+
+        return treatment_found;
+    }
+
+
+
+    public boolean TreatmentCheck(SQLiteDatabase db, String tablename, String compl, String presc,
+                                  String date) {
+        Cursor res = null;
+        String query;
+        Boolean treatment_found = false;
+
+        Log.d(TAG, "GetTreatmentListFromdDB(): dbname = " + db.getPath());
+
+        // check if treatment table exists in the current input database
+        query = "select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tablename + "'";
+
+        try {
+            res = db.rawQuery(query, null);
+        }
+        catch (Exception e) {
+            // given another chance
+            res = db.rawQuery(query, null);
+        }
+        if ((res == null) || (res.getCount() <= 0)) {
+            Log.d(TAG, "Treatment table " + tablename + " doesn't exist!");
+            res.close();
+            return false;
+        }
+        res.close();
+
+        // read all matching treatments for this patient from this input database
+        if ((presc == null) || presc.equals("")) {
+            query = "SELECT * FROM " + tablename + " WHERE complaint='" + compl +
+                    "' AND date='" + date + "'";
+        }
+        else if ((compl == null) || compl.equals("")) {
+            query = "SELECT * FROM " + tablename + " WHERE prescription='" + presc +
+                    "' AND date='" + date + "'";
+        }
+        else {
+            query = "SELECT * FROM " + tablename + " WHERE complaint='" + compl +
+                    "' AND prescription='" + presc + "' AND date='" + date + "'";
         }
         Log.d(TAG, query);
         res = db.rawQuery(query, null);

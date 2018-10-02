@@ -101,6 +101,7 @@ public class TreatmentAddEditActivity extends AppCompatActivity {
         if (mMode == Mode.ADD_TREAT) {
             Treatment treat = new Treatment(mCurrPatient, "", comp.getText().toString(),
                     pres.getText().toString(), mDoctor.name );
+            treat.date = date.getText().toString();
             mTreatmentDB.AddTreatment(treat);
             Log.d(TAG, "Added treatment for " + treat.patient.Name);
         }
