@@ -47,6 +47,7 @@ public class DbMgmtActivity extends AppCompatActivity {
     private enum findDuplStates {FD_IDLE, FD_GETUI, FD_GETUI_INPROG, FD_ACTION_REQUESTED};
     private findDuplStates mFdState = findDuplStates.FD_IDLE;
     private AsyncTask<Void, Void, Void> mFindDuplBkGndTask;
+    private String mSearchStr;
 
     static private Boolean dbOperationActive = false;
     static private Boolean fDupOperationActive = false;
@@ -348,6 +349,7 @@ public class DbMgmtActivity extends AppCompatActivity {
     //   P A T I E N T   S T A T I S T I C S
     private void ShowPatientStatistics(String searchStr) {
         patStatOperationActive = true;
+        mSearchStr = searchStr;
         runPatStatUiUpdateThread();
         mEditBoxStr = "Patient statistics: " + "...";
 
@@ -360,7 +362,7 @@ public class DbMgmtActivity extends AppCompatActivity {
                 int max_treats, males, females, total_pat, i;
                 Patient top_pat;
 
-                patientList = mPatientDB.GetPatientList(searchStr, ListOrder.REVERSE);
+                patientList = mPatientDB.GetPatientList(mSearchStr, ListOrder.REVERSE);
                 males = females = max_treats = i = 0;
                 total_pat = patientList.size();
                 top_pat = patientList.get(0);
@@ -568,9 +570,9 @@ public class DbMgmtActivity extends AppCompatActivity {
                     Intent intent = getBaseContext().getPackageManager()
                             .getLaunchIntentForPackage(getBaseContext().getPackageName());
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    myfinish();
                     startActivity(intent);
                 }
+                myfinish();
                 return null;
             }
         }.execute();
@@ -613,7 +615,7 @@ public class DbMgmtActivity extends AppCompatActivity {
                                         }
                                     });
 
-                                    AlertDialog dialog = builder.create();
+                                    final AlertDialog dialog = builder.create();
                                     dialog.setOnKeyListener(new Dialog.OnKeyListener() {
                                         @Override
                                         public boolean onKey(DialogInterface arg0, int keyCode,

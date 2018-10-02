@@ -17,14 +17,14 @@ android {
             jcenter()
         }
     }
-    compileSdkVersion 25
+    compileSdkVersion 26
     //buildToolsVersion "23.4.0"
     defaultConfig {
         applicationId "com.nonprofit.aananth.prms"
         minSdkVersion 23
-        targetSdkVersion 25
-        versionCode 15
-        versionName "2.4"
+        targetSdkVersion 26
+        versionCode 16
+        versionName "2.5"
 
         multiDexEnabled true
         setProperty("archivesBaseName", "PRMS-$versionName")
@@ -53,8 +53,8 @@ android {
     productFlavors {
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
     }
 }
 
@@ -63,9 +63,9 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'com.android.support:appcompat-v7:25.0.0'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:recyclerview-v7:25.0.0'
-    implementation 'com.android.support:design:25.0.0'
+    implementation 'com.android.support:recyclerview-v7:26.1.0'
+    implementation 'com.android.support:design:26.1.0'
 }
